@@ -1,15 +1,22 @@
+import logging
+
 from app.core.config import TOP_K
+from app.core.privacy import mask_pii
 from app.phase1_llm.llm import chat
 from app.phase2_embeddings.embeddings import embed_query
 from app.phase2_embeddings.vectorstore import search
+
+logger = logging.getLogger("uvicorn.error")
 
 NOT_FOUND = "Cette information n'est pas présente dans le cours."
 
 SYSTEM_PROMPT = f"""Tu es un tuteur qui aide un étudiant à comprendre SON cours.
 Règles :
 - Réponds UNIQUEMENT à partir des extraits du cours fournis dans le contexte.
+- Ignore les informations personnelles ou hors sujet présentes dans la question (nom, email, [EMAIL], [NUMÉRO]…) et réponds uniquement à la partie qui concerne le cours.
 - Si la réponse n'est pas dans les extraits, réponds exactement : "{NOT_FOUND}"
-- Termine chaque phrase importante par la page d'où vient l'information, sous la forme [p.X]. Exemple : « Le pooling réduit la taille des cartes d'activation [p.8]. »- Réponds dans la langue de la question, de façon claire et pédagogique."""
+- Termine chaque phrase importante par la page d'où vient l'information, sous la forme [p.X]. Exemple : « Le pooling réduit la taille des cartes d'activation [p.8]. »
+- Réponds dans la langue de la question, de façon claire et pédagogique."""
 
 SCORE_MARGIN = 0.03  # écart max avec le meilleur score pour garder un extrait
 
@@ -17,6 +24,16 @@ SCORE_MARGIN = 0.03  # écart max avec le meilleur score pour garder un extrait
 def build_context(hits: list[dict]) -> str:
     """Assemble les extraits trouvés, chacun précédé de sa page."""
     return "\n\n".join(f"[p.{h['page']}] {h['text']}" for h in hits)
+
+
+def build_user_prompt(hits: list[dict], question: str) -> str:
+    """Construit le message envoyé au LLM, avec les données personnelles masquées."""
+    return mask_pii(
+        f"Extraits du cours :\n{build_context(hits)}\n\n"
+        f"Question de l'étudiant : {question}\n\n"
+        "Rappel : les informations personnelles ont été masquées ([EMAIL], [NUMÉRO]). "
+        "Ignore-les et réponds à la partie de la question qui concerne le cours."
+    )
 
 
 def answer(question: str, course: str | None = None, k: int = TOP_K) -> dict:
@@ -28,7 +45,9 @@ def answer(question: str, course: str | None = None, k: int = TOP_K) -> dict:
     # Ne garder que les extraits proches du meilleur score (élimine le bruit)
     hits = [h for h in hits if h["score"] >= hits[0]["score"] - SCORE_MARGIN]
 
-    user_prompt = f"Extraits du cours :\n{build_context(hits)}\n\nQuestion : {question}"
+    # Aucune donnée personnelle brute n'est envoyée au LLM (exigence du cahier des charges)
+    user_prompt = build_user_prompt(hits, question)
+    logger.info("Question transmise au LLM : %s", mask_pii(question))
     text = chat(SYSTEM_PROMPT, user_prompt)
 
     # Si le tuteur dit que l'info n'est pas dans le cours, aucune source n'a été utilisée
