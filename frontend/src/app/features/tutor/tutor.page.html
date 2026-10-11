@@ -1,0 +1,43 @@
+<header class="page-header">
+  <h1>Tuteur de cours</h1>
+  <p class="lede">Des réponses tirées uniquement de tes cours, avec les pages pour vérifier.</p>
+</header>
+
+@if (error(); as message) {
+  <div class="banner" role="alert">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="9" /><path d="M12 7v6" /><path d="M12 16.5h.01" />
+    </svg>
+    <p class="banner__text">{{ message }}</p>
+    <button type="button" class="icon-btn banner__close" aria-label="Fermer le message d'erreur" (click)="dismissError()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+        <path d="M6 6l12 12M18 6 6 18" />
+      </svg>
+    </button>
+  </div>
+}
+
+<div class="layout">
+  <aside class="sidebar" aria-label="Gestion des cours">
+    <app-upload-panel (uploaded)="onUploaded($event)" />
+    <app-course-selector
+      [courses]="courses()"
+      [selected]="selectedCourse()"
+      [loading]="coursesLoading()"
+      [deleting]="deleting()"
+      (selectedChange)="onSelectCourse($event)"
+      (deleteCourse)="onDeleteCourse($event)"
+    />
+  </aside>
+
+  <section class="chat" aria-label="Conversation avec le tuteur">
+    <app-chat-thread [messages]="messages()" (suggestion)="onSuggestion($event)" />
+    <app-question-input
+      class="composer"
+      [(text)]="draft"
+      [loading]="asking()"
+      [course]="selectedCourse()"
+      (ask)="onAsk($event)"
+    />
+  </section>
+</div>

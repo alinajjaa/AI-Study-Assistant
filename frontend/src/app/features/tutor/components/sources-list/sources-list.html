@@ -1,0 +1,43 @@
+<div class="badges">
+  <span class="title">Sources</span>
+  @for (source of pages(); track source.key) {
+    <button
+      type="button"
+      class="badge"
+      [class.badge--active]="activePage() === source.page"
+      [attr.aria-expanded]="activePage() === source.page"
+      [attr.aria-controls]="panelId"
+      [attr.aria-label]="'Extrait de la page ' + source.page + ', ' + source.course"
+      (click)="toggle(source.page)"
+    >
+      p.{{ source.page }}
+      @if (multiCourse()) {
+        <span class="badge__course">{{ source.course }}</span>
+      }
+    </button>
+  }
+</div>
+
+<div [id]="panelId">
+  @for (source of openPages(); track source.key) {
+    <div class="panel">
+      <div class="panel__head">
+        <p class="meta">
+          Page {{ source.page }} · <span class="meta__course">{{ source.course }}</span>
+        </p>
+        <span class="score" [title]="'Pertinence de l\'extrait : ' + source.percent + ' %'">
+          <span class="score__track" aria-hidden="true">
+            <span class="score__fill" [style.width.%]="source.percent"></span>
+          </span>
+          {{ source.percent }} %
+        </span>
+        <button type="button" class="icon-btn" aria-label="Fermer l'extrait" (click)="close()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <blockquote class="excerpt">« {{ source.excerpt }}… »</blockquote>
+    </div>
+  }
+</div>

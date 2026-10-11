@@ -1,0 +1,79 @@
+<section class="card" aria-labelledby="upload-title">
+  <h2 id="upload-title" class="card__title">Ajouter un cours</h2>
+
+  @if (uploading()) {
+    <div class="progress-box">
+      <p class="file-name">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" />
+        </svg>
+        <span class="truncate">{{ file()?.name }}</span>
+      </p>
+      <div class="progress" role="progressbar" aria-label="Indexation du PDF en cours">
+        <span class="progress__bar"></span>
+      </div>
+      <p class="hint" role="status">Indexation… cela peut prendre un moment.</p>
+    </div>
+  } @else {
+    <label
+      class="dropzone"
+      for="pdf-file"
+      [class.dropzone--over]="dragging()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="M12 15V4" /><path d="m7 9 5-5 5 5" /><path d="M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" />
+      </svg>
+      <span class="dropzone__text">Glisse ton PDF ici<br />ou <span class="dropzone__link">parcours tes fichiers</span></span>
+      <span class="hint">PDF uniquement · {{ maxSizeMb }} Mo max.</span>
+    </label>
+  }
+
+  <input
+    #fileInput
+    id="pdf-file"
+    class="sr-only"
+    type="file"
+    accept="application/pdf,.pdf"
+    [disabled]="uploading()"
+    (change)="onFileChange($event)"
+  />
+
+  @if (file() && !uploading()) {
+    <div class="selected">
+      <span class="truncate" [title]="file()?.name">{{ file()?.name }}</span>
+      <span class="hint">{{ fileSize() }}</span>
+      <button type="button" class="icon-btn" aria-label="Retirer le fichier sélectionné" (click)="clearFile()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+          <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
+      </button>
+    </div>
+  }
+
+  <div>
+    <label class="label" for="course-name">Nom du cours <span class="optional">(optionnel)</span></label>
+    <input
+      id="course-name"
+      class="field"
+      type="text"
+      placeholder="Par défaut : nom du fichier"
+      [value]="courseName()"
+      [disabled]="uploading()"
+      (input)="onCourseNameInput($event)"
+    />
+  </div>
+
+  <button type="button" class="btn" [disabled]="!canUpload()" (click)="upload()">
+    {{ uploading() ? 'Indexation…' : 'Indexer le cours' }}
+  </button>
+
+  @if (success(); as message) {
+    <p class="alert alert--success" role="status">{{ message }}</p>
+  }
+  @if (error(); as message) {
+    <p class="alert alert--error" role="alert">{{ message }}</p>
+  }
+</section>
