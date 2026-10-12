@@ -1,0 +1,117 @@
+<dialog
+  #dialog
+  class="dialog"
+  aria-labelledby="exam-title"
+  aria-describedby="exam-desc"
+  (close)="onClose()"
+  (keydown)="onKeydown($event)"
+  (mousedown)="onMouseDown($event)"
+  (mouseup)="onMouseUp($event)"
+>
+  @if (course(); as courseName) {
+    <form class="panel" (submit)="$event.preventDefault(); submit()">
+      <div class="head">
+        <h2 id="exam-title">Générer un examen</h2>
+        <button type="button" class="icon-btn" aria-label="Fermer" (click)="cancel()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <p id="exam-desc" class="desc">Examen PDF noté sur 20, à partir du cours <strong>{{ courseName }}</strong>.</p>
+
+      <div class="group">
+        <span id="exam-format-label" class="label">Type d'examen</span>
+        <div class="formats" role="radiogroup" aria-labelledby="exam-format-label">
+          @for (option of formats; track option.value) {
+            <button
+              type="button"
+              role="radio"
+              class="format"
+              [attr.aria-checked]="option.value === format()"
+              [tabIndex]="option.value === format() ? 0 : -1"
+              (click)="setFormat(option)"
+              (keydown)="onRadioKeydown($event, formats, option, setFormat)"
+            >
+              <span class="format__title">{{ option.label }}</span>
+              <span class="format__desc">{{ option.description }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (format() === 'qcm') {
+        <div class="group">
+          <span id="exam-count-label" class="label">Nombre de questions</span>
+          <div class="segmented" role="radiogroup" aria-labelledby="exam-count-label" aria-describedby="exam-scale">
+            @for (count of counts; track count) {
+              <button
+                type="button"
+                role="radio"
+                class="segment"
+                [attr.aria-checked]="count === numQuestions()"
+                [tabIndex]="count === numQuestions() ? 0 : -1"
+                (click)="setCount(count)"
+                (keydown)="onRadioKeydown($event, counts, count, setCount)"
+              >
+                {{ count }}
+              </button>
+            }
+          </div>
+          <p id="exam-scale" class="scale">Barème : {{ scale() }}</p>
+        </div>
+      } @else {
+        <ul class="parts" aria-label="Structure de l'examen complet, noté sur 20">
+          @for (p of parts; track p.part) {
+            <li>
+              <span class="parts__name">Partie {{ p.part }}</span>
+              <span>{{ p.count }} {{ p.kind }}</span>
+              <span class="parts__pts">{{ p.points }} pts</span>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="group">
+        <span id="exam-difficulty-label" class="label">Difficulté</span>
+        <div class="segmented" role="radiogroup" aria-labelledby="exam-difficulty-label">
+          @for (level of difficulties; track level.value) {
+            <button
+              type="button"
+              role="radio"
+              class="segment"
+              [attr.aria-checked]="level.value === difficulty()"
+              [tabIndex]="level.value === difficulty() ? 0 : -1"
+              (click)="setDifficulty(level.value)"
+              (keydown)="onRadioKeydown($event, difficulties, level, setLevel)"
+            >
+              {{ level.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <label class="check">
+        <input type="checkbox" [checked]="includeAnswers()" (change)="onToggleAnswers($event)" />
+        Inclure le corrigé
+      </label>
+
+      <p class="estimate" aria-live="polite">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 2" /><path d="M9.5 2.5h5" />
+        </svg>
+        <span>
+          Durée estimée : <strong>environ {{ minutes() }} min</strong>
+          <span class="estimate__detail">(génération en arrière-plan)</span>
+        </span>
+      </p>
+
+      <p class="ai-note">Le corrigé est généré par IA : relis-le avant de distribuer l'examen.</p>
+
+      <div class="actions">
+        <button type="button" class="btn btn--ghost" (click)="cancel()">Annuler</button>
+        <button type="submit" class="btn">Générer l'examen</button>
+      </div>
+    </form>
+  }
+</dialog>

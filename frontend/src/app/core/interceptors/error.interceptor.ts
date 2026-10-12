@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { catchError, throwError } from 'rxjs';
+import { Observable, catchError, from, switchMap, throwError } from 'rxjs';
 
 const UNREACHABLE = 'Backend injoignable : vérifie que uvicorn tourne sur le port 8000';
 const GENERIC = 'Une erreur inattendue est survenue';
@@ -27,16 +27,38 @@ function readDetail(body: unknown): string | null {
   return null;
 }
 
+/**
+ * Avec responseType 'blob', le corps d'erreur arrive lui aussi en Blob :
+ * on le lit comme texte puis comme JSON. Repli sur null si ce n'est pas du JSON valide.
+ */
+export async function readBlobDetail(blob: Blob): Promise<string | null> {
+  try {
+    return readDetail(JSON.parse(await blob.text()));
+  } catch {
+    return null;
+  }
+}
+
+function toError(err: HttpErrorResponse, detail: string | null): Error {
+  if (err.status === 0) {
+    return new Error(UNREACHABLE);
+  }
+  return new Error(detail ?? `${GENERIC} (code ${err.status})`);
+}
+
 /** Transforme toute HttpErrorResponse en Error portant un message lisible en français. */
 export const errorInterceptor: HttpInterceptorFn = (req, next) =>
   next(req).pipe(
-    catchError((err: unknown) => {
+    catchError((err: unknown): Observable<never> => {
       if (!(err instanceof HttpErrorResponse)) {
         return throwError(() => err);
       }
-      const message =
-        err.status === 0 ? UNREACHABLE : (readDetail(err.error) ?? `${GENERIC} (code ${err.status})`);
-      return throwError(() => new Error(message));
+      if (err.error instanceof Blob) {
+        return from(readBlobDetail(err.error)).pipe(
+          switchMap((detail) => throwError(() => toError(err, detail))),
+        );
+      }
+      return throwError(() => toError(err, readDetail(err.error)));
     }),
   );
 

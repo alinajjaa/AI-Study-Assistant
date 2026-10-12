@@ -63,6 +63,23 @@ def delete_course(course: str) -> None:
     client.delete(COLLECTION, points_selector=FilterSelector(filter=_course_filter(course)))
 
 
+
+def get_course_chunks(course: str) -> list[dict]:
+    """Renvoie tous les chunks d'un cours, triés par numéro de page."""
+    chunks, offset = [], None
+    while True:
+        points, offset = client.scroll(
+            COLLECTION,
+            scroll_filter=_course_filter(course),
+            limit=256,
+            offset=offset,
+            with_payload=True,
+            with_vectors=False,
+        )
+        chunks.extend(p.payload for p in points)
+        if offset is None:
+            return sorted(chunks, key=lambda c: c["page"])
+
 if __name__ == "__main__":
     from app.phase2_embeddings.embeddings import embed_passages, embed_query
 

@@ -1,21 +1,25 @@
 import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { finalize } from 'rxjs';
 import { toMessage } from '../../core/interceptors/error.interceptor';
+import { ExamOptions } from '../../core/models/exam.models';
 import { ChatMessage, UploadResponse } from '../../core/models/tutor.models';
+import { ExamJobsService } from '../../core/services/exam-jobs.service';
 import { TutorApiService } from '../../core/services/tutor-api.service';
 import { ChatThread } from './components/chat-thread/chat-thread';
 import { CourseSelector } from './components/course-selector/course-selector';
+import { ExamDialog } from './components/exam-dialog/exam-dialog';
 import { QuestionInput } from './components/question-input/question-input';
 import { UploadPanel } from './components/upload-panel/upload-panel';
 
 @Component({
   selector: 'app-tutor-page',
-  imports: [UploadPanel, CourseSelector, ChatThread, QuestionInput],
+  imports: [UploadPanel, CourseSelector, ChatThread, QuestionInput, ExamDialog],
   templateUrl: './tutor.page.html',
   styleUrl: './tutor.page.css',
 })
 export class TutorPage {
   private readonly api = inject(TutorApiService);
+  protected readonly examJobs = inject(ExamJobsService);
   private readonly questionInput = viewChild.required(QuestionInput);
   private nextMessageId = 1;
 
@@ -27,6 +31,8 @@ export class TutorPage {
   protected readonly messages = signal<ChatMessage[]>([]);
   protected readonly draft = signal('');
   protected readonly error = signal<string | null>(null);
+  /** Cours pour lequel la modale d'examen est ouverte (null = fermée). */
+  protected readonly examCourse = signal<string | null>(null);
   protected readonly asking = computed(() => this.messages().some((m) => m.status === 'pending'));
 
   constructor() {
@@ -45,6 +51,25 @@ export class TutorPage {
   protected onSuggestion(text: string): void {
     this.draft.set(text);
     this.questionInput().focus();
+  }
+
+  protected onOpenExam(course: string): void {
+    if (!this.examJobs.isGenerating(course)) {
+      this.examCourse.set(course);
+    }
+  }
+
+  /** La modale se ferme aussitôt ; la génération continue en arrière-plan. */
+  protected onGenerateExam(options: ExamOptions): void {
+    const course = this.examCourse();
+    this.examCourse.set(null);
+    if (course !== null) {
+      this.examJobs.start(course, options);
+    }
+  }
+
+  protected onExamDialogClosed(): void {
+    this.examCourse.set(null);
   }
 
   protected onDeleteCourse(course: string): void {

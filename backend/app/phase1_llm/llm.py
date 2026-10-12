@@ -17,11 +17,33 @@ client = OpenAI(
 )
 
 
-def chat(system: str, user: str, max_tokens: int = 1024, temperature: float = 0.3) -> str:
-    """Envoie un message au LLM et renvoie sa réponse, ou lève LLMError."""
+def chat(
+    system: str,
+    user: str,
+    max_tokens: int = 1024,
+    temperature: float = 0.3,
+    json_mode: bool = False,
+    json_schema: dict | None = None,
+) -> str:
+    """Envoie un message au LLM et renvoie sa réponse, ou lève LLMError.
+
+    json_mode=True force une réponse en JSON valide.
+    json_schema force en plus la réponse à respecter exactement ce schéma (sorties structurées).
+    """
     if not LLM_API_KEY:
         raise LLMError("Clé API du LLM absente : renseigne LLM_API_KEY dans le fichier .env.")
 
+    if json_schema:
+        extra = {"response_format": {
+            "type": "json_schema",
+            "json_schema": {"name": "reponse", "schema": json_schema},
+        }}
+    elif json_mode:
+        extra = {"response_format": {"type": "json_object"}}
+    else:
+        extra = {}
+
+        
     try:
         out = client.chat.completions.create(
             model=LLM_MODEL,
@@ -31,6 +53,7 @@ def chat(system: str, user: str, max_tokens: int = 1024, temperature: float = 0.
             ],
             max_tokens=max_tokens,
             temperature=temperature,
+            **extra,
         )
     except APITimeoutError as e:  # à intercepter AVANT APIConnectionError, dont il hérite
         raise LLMError(f"Le modèle n'a pas répondu en {int(LLM_TIMEOUT)} s (timeout). Réessaie.") from e
@@ -50,13 +73,13 @@ def chat(system: str, user: str, max_tokens: int = 1024, temperature: float = 0.
 
 
 if __name__ == "__main__":
-    system = "Tu es un tuteur pédagogue. Réponds de façon claire et adaptée à un étudiant."
-    print("💬 Pose ta question (tape 'exit' pour quitter)\n")
-    while True:
-        question = input("Toi : ").strip()
-        if question.lower() in ("exit", "quit", ""):
-            break
-        try:
-            print(f"\nTuteur : {chat(system, question)}\n")
-        except LLMError as e:
-            print(f"\n❌ {e}\n")
+    import json
+
+    raw = chat(
+        "Tu réponds uniquement en JSON.",
+        'Donne une capitale africaine au format {"pays": "...", "capitale": "..."}',
+        max_tokens=100,
+        json_mode=True,
+    )
+    print("Réponse brute :", raw)
+    print("JSON valide   :", json.loads(raw))

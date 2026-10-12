@@ -7,7 +7,7 @@ from app.phase3_rag.routes import router as tutor_router
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from app.phase1_llm.llm import LLMError
-
+from app.phase4_exam.routes import router as exam_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_collection()  # crée la collection Qdrant au démarrage si besoin
@@ -21,10 +21,11 @@ app.add_middleware(
     allow_origins=["http://localhost:4200"],  # frontend Angular
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition", "X-Questions-Generated", "X-Questions-Expected", "X-Exam-Total"],
 )
 
 app.include_router(tutor_router)
-
+app.include_router(exam_router)
 
 @app.exception_handler(LLMError)
 async def llm_error_handler(request: Request, exc: LLMError):

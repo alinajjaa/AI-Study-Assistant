@@ -32,7 +32,7 @@
 .row {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 2px;
 }
 
 .item {
@@ -71,6 +71,43 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.exam-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 2px 0 var(--space-1) var(--space-6);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.exam-badge__time {
+  font-variant-numeric: tabular-nums;
+}
+
+.exam-badge__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: blink 1.4s ease-in-out infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exam-badge__dot {
+    animation: none;
+  }
 }
 
 .empty {

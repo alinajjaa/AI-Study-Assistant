@@ -19,6 +19,8 @@
   --on-accent: #ffffff;
   --danger: #a3302c;
   --danger-soft: #f8e7e4;
+  --warning: #8a5300;
+  --warning-soft: #fbf0dc;
   --off-bg: #f4f0e7;
   --off-border: #d8cfbd;
   --bubble-student: #e9e4d8;
@@ -75,6 +77,8 @@
     --on-accent: #0f1d17;
     --danger: #f19b90;
     --danger-soft: #3a2121;
+    --warning: #e8b86a;
+    --warning-soft: #3a2f1c;
     --off-bg: #1e222a;
     --off-border: #3a4150;
     --bubble-student: #262d38;

@@ -25,8 +25,11 @@
       [selected]="selectedCourse()"
       [loading]="coursesLoading()"
       [deleting]="deleting()"
+      [examJobs]="examJobs.jobs()"
+      [now]="examJobs.now()"
       (selectedChange)="onSelectCourse($event)"
       (deleteCourse)="onDeleteCourse($event)"
+      (generateExam)="onOpenExam($event)"
     />
   </aside>
 
@@ -41,3 +44,5 @@
     />
   </section>
 </div>
+
+<app-exam-dialog [course]="examCourse()" (generate)="onGenerateExam($event)" (closed)="onExamDialogClosed()" />
