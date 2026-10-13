@@ -1,0 +1,212 @@
+:host {
+  display: block;
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title {
+  font-size: var(--text-xl);
+}
+
+.top .hint {
+  margin: 0;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.progress {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--border);
+  overflow: hidden;
+}
+
+.progress__bar {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--duration) var(--ease);
+}
+
+.progress-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Carte 3D ---------- */
+.scene {
+  perspective: 1200px;
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+}
+
+.card {
+  display: grid;
+  min-height: 17rem;
+  transform-style: preserve-3d;
+  transition: transform 500ms var(--ease);
+}
+
+.card--flipped {
+  transform: rotateY(180deg);
+}
+
+/* Les deux faces occupent la même cellule : la carte prend la hauteur de la plus haute. */
+.face {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.face--back {
+  transform: rotateY(180deg);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.concept {
+  align-self: flex-start;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.face--back .concept {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.question,
+.answer {
+  margin: 0;
+  font-family: var(--font-serif);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.question {
+  font-size: var(--text-2xl);
+}
+
+.answer {
+  font-size: var(--text-xl);
+}
+
+.face__hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.page {
+  align-self: flex-end;
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+/* ---------- Contrôles ---------- */
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.nav {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.actions,
+.end__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.answer-btn {
+  min-width: 8.5rem;
+}
+
+.btn .kbd {
+  color: var(--text);
+}
+
+.keys {
+  margin: 0;
+  text-align: center;
+}
+
+/* ---------- Écran de fin ---------- */
+.end {
+  padding: var(--space-8) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  text-align: center;
+}
+
+.end__title {
+  font-size: var(--text-2xl);
+}
+
+.score {
+  margin: var(--space-2) 0 var(--space-6);
+  color: var(--text-muted);
+}
+
+.score strong {
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .face {
+    padding: var(--space-4);
+  }
+
+  .question {
+    font-size: var(--text-xl);
+  }
+
+  .keys {
+    display: none;
+  }
+}

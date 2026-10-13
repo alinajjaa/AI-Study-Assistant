@@ -45,39 +45,6 @@
   color: var(--text);
 }
 
-.segmented {
-  display: flex;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  background: var(--surface-alt);
-}
-
-.segment {
-  flex: 1;
-  min-height: 2.25rem;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color var(--duration) var(--ease), color var(--duration) var(--ease);
-}
-
-.segment:hover {
-  color: var(--text);
-}
-
-.segment[aria-checked='true'] {
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: var(--shadow-sm);
-}
-
 .formats {
   display: grid;
   grid-template-columns: 1fr 1fr;

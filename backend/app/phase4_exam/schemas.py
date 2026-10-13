@@ -22,6 +22,8 @@ NEGATION = re.compile(r"\b(?:ne\s+\S+|n['’]\S+)\s+(?:pas|jamais|plus)\b", re.I
 DOUBLE_QUESTION = re.compile(r"\bet\s+(?:quel|quelle|quels|quelles|comment|pourquoi)\b", re.IGNORECASE)
 # Mots anglais fréquents : 2 ou plus → texte non traduit
 ENGLISH_WORDS = re.compile(r"\b(the|of|and|is|are|between|about|which|with|for)\b", re.IGNORECASE)
+# Lettres cyrilliques, arabes ou chinoises glissées par erreur dans un mot (« effектer »)
+NON_LATIN = re.compile(r"[\u0400-\u04FF\u0600-\u06FF\u4E00-\u9FFF]")
 WORD = re.compile(r"[a-zàâçéèêëîïôûùüÿœ]{4,}", re.IGNORECASE)
 
 # Antislashs mal échappés dans le JSON : « C:\flutter\bin » devient \f (saut de page) et \b (retour arrière)
@@ -51,6 +53,8 @@ def check_french(text: str) -> str:
     text = capitalize_first(text)
     if len(ENGLISH_WORDS.findall(text)) >= 2:
         raise ValueError("texte en anglais")
+    if NON_LATIN.search(text):
+        raise ValueError("caractères non latins dans le texte")
     return text
 
 

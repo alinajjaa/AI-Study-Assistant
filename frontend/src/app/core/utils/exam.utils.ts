@@ -1,17 +1,15 @@
-import { EXAM_TOTAL_POINTS, ExamFormat, ExamOptions } from '../models/exam.models';
+import { EXAM_TOTAL_POINTS, ExamOptions, QuestionCount } from '../models/exam.models';
 
-/** Durée moyenne de génération d'un QCM par le LLM local (format « qcm »). */
-export const SECONDS_PER_QUESTION = 15;
-
-/** Durée estimée de l'examen complet (15 questions en 4 parties). */
+/** Durée de génération mesurée sur le backend (Ollama qwen2.5:7b), en minutes. */
 export const COMPLETE_EXAM_MINUTES = 3;
+export const QCM_EXAM_MINUTES: Readonly<Record<QuestionCount, number>> = { 5: 1, 10: 2, 20: 3 };
 
-/** Durée estimée de génération, arrondie à la minute (1 min au minimum). */
-export function estimateExamMinutes(options: { format: ExamFormat; numQuestions: number }): number {
-  if (options.format === 'complet') {
-    return COMPLETE_EXAM_MINUTES;
-  }
-  return Math.max(1, Math.round((options.numQuestions * SECONDS_PER_QUESTION) / 60));
+/**
+ * Durée estimée de génération, seule source pour la modale et la notification de lancement.
+ * La difficulté n'influe pas sur la durée.
+ */
+export function estimateExamMinutes(options: Pick<ExamOptions, 'format' | 'numQuestions'>): number {
+  return options.format === 'complet' ? COMPLETE_EXAM_MINUTES : QCM_EXAM_MINUTES[options.numQuestions];
 }
 
 /** Barème du QCM rapide : 20 points répartis sur toutes les questions. */

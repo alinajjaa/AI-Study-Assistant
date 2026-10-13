@@ -1,0 +1,103 @@
+<header class="page-header">
+  <h1>Flashcards</h1>
+  <p class="lede">Des cartes question / réponse tirées de tes cours, pour réviser les notions clés.</p>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" aria-label="Choix du cours">
+    <app-course-selector
+      [courses]="courses()"
+      [selected]="selectedCourse()"
+      [loading]="coursesLoading()"
+      [allowAll]="false"
+      [actions]="false"
+      [jobs]="jobs.jobs()"
+      jobLabel="Flashcards en cours…"
+      [now]="jobs.now()"
+      (selectedChange)="onSelectCourse($event)"
+    />
+  </aside>
+
+  <section class="main" aria-label="Flashcards du cours">
+    @if (selectedCourse(); as course) {
+      @if (reviewCards(); as cards) {
+        <app-flashcard-review [cards]="cards" [course]="course" (exit)="stopReview()" />
+      } @else {
+        @if (deck(); as current) {
+          <div class="card deck">
+            <div class="deck__info">
+              <h2 class="card__title">Paquet prêt</h2>
+              <p class="deck__meta">
+                <strong>{{ current.cards.length }} carte{{ current.cards.length > 1 ? 's' : '' }}</strong>
+                @if (current.cards.length < current.requested) {
+                  sur {{ current.requested }} demandées
+                }
+                @if (deckDate(); as date) {
+                  · générées le {{ date }}
+                }
+              </p>
+            </div>
+            <button type="button" class="btn" (click)="startReview()">Réviser le paquet</button>
+          </div>
+        }
+
+        <div class="card setup">
+          <h2 class="card__title">{{ deck() ? 'Nouveau paquet' : 'Générer des flashcards' }}</h2>
+          <p class="hint course-name">Cours : <strong>{{ course }}</strong></p>
+
+          <div>
+            <span id="card-count-label" class="label">Nombre de cartes</span>
+            <div class="segmented" role="radiogroup" aria-labelledby="card-count-label">
+              @for (n of counts; track n) {
+                <button
+                  type="button"
+                  role="radio"
+                  class="segment"
+                  [attr.aria-checked]="n === count()"
+                  [tabIndex]="n === count() ? 0 : -1"
+                  (click)="setCount(n)"
+                  (keydown)="onRadioKeydown($event, counts, n, setCount)"
+                >
+                  {{ n }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <p class="estimate">
+            Durée estimée : <strong>environ {{ minutes() }} min</strong>
+            <span class="hint">· génération en arrière-plan, tu peux continuer à utiliser le tuteur</span>
+          </p>
+
+          <div class="setup__actions">
+            <button
+              type="button"
+              class="btn"
+              [class.btn--ghost]="deck() !== null"
+              [disabled]="generating()"
+              (click)="generate()"
+            >
+              @if (generating()) {
+                Génération en cours… {{ elapsed() }}
+              } @else {
+                {{ deck() ? 'Régénérer' : 'Générer les flashcards' }}
+              }
+            </button>
+            @if (deck() && !generating()) {
+              <span class="hint">Le paquet actuel sera remplacé à la fin de la génération.</span>
+            }
+          </div>
+        </div>
+      }
+    } @else {
+      <div class="card empty">
+        @if (coursesLoading()) {
+          <p class="hint">Chargement des cours…</p>
+        } @else {
+          <h2 class="card__title">Aucun cours</h2>
+          <p class="hint">Ajoute d'abord un cours en PDF depuis le <a routerLink="/tutor">tuteur</a>.</p>
+        }
+      </div>
+    }
+  </section>
+</div>

@@ -7,6 +7,11 @@ export const routes: Routes = [
     title: 'Tuteur de cours · AI Study Assistant',
     loadComponent: () => import('./features/tutor/tutor.page').then((m) => m.TutorPage),
   },
-  // Futures fonctionnalités (quiz, flashcards…) : ajouter leurs routes ici.
+  {
+    path: 'flashcards',
+    title: 'Flashcards · AI Study Assistant',
+    loadComponent: () => import('./features/flashcards/flashcards.page').then((m) => m.FlashcardsPage),
+  },
+  // Futures fonctionnalités : ajouter leurs routes ici.
   { path: '**', redirectTo: 'tutor' },
 ];

@@ -8,6 +8,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from app.phase1_llm.llm import LLMError
 from app.phase4_exam.routes import router as exam_router
+from app.phase7_flashcards.routes import router as flashcards_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_collection()  # crée la collection Qdrant au démarrage si besoin
@@ -26,7 +27,7 @@ app.add_middleware(
 
 app.include_router(tutor_router)
 app.include_router(exam_router)
-
+app.include_router(flashcards_router)
 @app.exception_handler(LLMError)
 async def llm_error_handler(request: Request, exc: LLMError):
     """Toute erreur du LLM devient une réponse 503 avec un message clair pour le frontend."""

@@ -1,3 +1,4 @@
+import { ExamOptions } from '../models/exam.models';
 import {
   estimateExamMinutes,
   fallbackExamFilename,
@@ -43,14 +44,22 @@ describe('estimateExamMinutes', () => {
     expect(estimateExamMinutes({ format: 'complet', numQuestions: 20 })).toBe(3);
   });
 
-  it('compte ~15 s par question pour le QCM rapide, arrondi à la minute', () => {
-    expect(estimateExamMinutes({ format: 'qcm', numQuestions: 5 })).toBe(1); // 75 s
-    expect(estimateExamMinutes({ format: 'qcm', numQuestions: 10 })).toBe(3); // 150 s
-    expect(estimateExamMinutes({ format: 'qcm', numQuestions: 20 })).toBe(5); // 300 s
+  it('utilise les durées mesurées pour le QCM rapide (5 → 1 min, 10 → 2 min, 20 → 3 min)', () => {
+    expect(estimateExamMinutes({ format: 'qcm', numQuestions: 5 })).toBe(1);
+    expect(estimateExamMinutes({ format: 'qcm', numQuestions: 10 })).toBe(2);
+    expect(estimateExamMinutes({ format: 'qcm', numQuestions: 20 })).toBe(3);
   });
 
-  it('annonce au moins 1 minute', () => {
-    expect(estimateExamMinutes({ format: 'qcm', numQuestions: 1 })).toBe(1); // 15 s
+  it('ne dépend pas de la difficulté', () => {
+    for (const format of ['complet', 'qcm'] as const) {
+      for (const numQuestions of [5, 10, 20] as const) {
+        const durations = (['facile', 'moyen', 'difficile'] as const).map((difficulty) => {
+          const options: ExamOptions = { format, numQuestions, difficulty, includeAnswers: true };
+          return estimateExamMinutes(options);
+        });
+        expect(new Set(durations).size).toBe(1);
+      }
+    }
   });
 });
 

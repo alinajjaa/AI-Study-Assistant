@@ -1,0 +1,96 @@
+<section class="review" aria-labelledby="review-title">
+  <div class="top">
+    <div>
+      <h2 id="review-title" class="title">{{ round() === 'all' ? 'Révision' : 'Cartes à revoir' }}</h2>
+      <p class="hint">{{ course() }}</p>
+    </div>
+    <button type="button" class="btn btn--ghost btn--sm" (click)="exit.emit()">Quitter la révision</button>
+  </div>
+
+  <div class="progress-row">
+    <div
+      class="progress"
+      role="progressbar"
+      aria-label="Progression de la révision"
+      aria-valuemin="0"
+      [attr.aria-valuemax]="session.total()"
+      [attr.aria-valuenow]="session.finished() ? session.total() : session.index()"
+    >
+      <span class="progress__bar" [style.width.%]="progressPercent()"></span>
+    </div>
+    <span class="progress-label">{{ session.position() }} / {{ session.total() }}</span>
+  </div>
+
+  @if (session.current(); as card) {
+    <!-- Clic souris pour retourner ; au clavier : Espace (raccourci global) ou le bouton ci-dessous -->
+    <div #card class="scene" tabindex="-1" aria-describedby="review-keys" (click)="flip()">
+      <div class="card" [class.card--flipped]="session.flipped()">
+        <div class="face face--front" [attr.aria-hidden]="session.flipped()">
+          <span class="concept">{{ card.concept }}</span>
+          <p class="question">{{ card.front }}</p>
+          <span class="face__hint">Clique ou appuie sur Espace pour retourner</span>
+        </div>
+        <div class="face face--back" [attr.aria-hidden]="!session.flipped()">
+          <span class="concept">Réponse · {{ card.concept }}</span>
+          <p class="answer">{{ card.back }}</p>
+          <span class="page">p.{{ card.page }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button
+        type="button"
+        class="icon-btn nav"
+        aria-label="Carte précédente"
+        [disabled]="session.index() === 0"
+        (click)="previous()"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+      </button>
+
+      <div class="actions">
+        @if (session.flipped()) {
+          <button type="button" class="btn btn--ghost answer-btn" (click)="answer('review')">
+            À revoir <kbd class="kbd">1</kbd>
+          </button>
+          <button type="button" class="btn answer-btn" (click)="answer('known')">
+            Je savais <kbd class="kbd">2</kbd>
+          </button>
+        } @else {
+          <button type="button" class="btn" (click)="flip()">Afficher la réponse</button>
+        }
+      </div>
+
+      <button type="button" class="icon-btn nav" aria-label="Carte suivante" (click)="next()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </button>
+    </div>
+
+    <p id="review-keys" class="hint keys">
+      <kbd class="kbd">Espace</kbd> retourner · <kbd class="kbd">1</kbd> à revoir · <kbd class="kbd">2</kbd> je savais ·
+      <kbd class="kbd">←</kbd> <kbd class="kbd">→</kbd> naviguer
+    </p>
+  } @else {
+    <div class="end">
+      <h3 #endTitle class="end__title" tabindex="-1">Révision terminée</h3>
+      <p class="score">
+        <strong>{{ session.knownCount() }} / {{ session.total() }}</strong> cartes sues
+      </p>
+      <div class="end__actions">
+        @if (session.toReview().length > 0) {
+          <button type="button" class="btn" (click)="restart('missed')">
+            Revoir les cartes à revoir ({{ session.toReview().length }})
+          </button>
+        }
+        <button type="button" class="btn btn--ghost" (click)="restart('all')">Recommencer tout le paquet</button>
+      </div>
+    </div>
+  }
+
+  <p class="sr-only" aria-live="polite">{{ announcement() }}</p>
+</section>

@@ -25,6 +25,7 @@ import {
   QuestionCount,
 } from '../../../../core/models/exam.models';
 import { loadExamOptions, saveExamOptions } from '../../../../core/utils/exam-options.storage';
+import { handleRadioKeydown } from '../../../../shared/utils/radio-group';
 import { estimateExamMinutes, formatPoints, pointsPerQuestion } from '../../../../core/utils/exam.utils';
 
 /** Éléments atteignables avec Tab (les radios non cochées ont tabindex=-1). */
@@ -114,26 +115,7 @@ export class ExamDialog {
   }
 
   /** Flèches, Début, Fin : déplace la sélection dans un groupe de boutons radio. */
-  protected onRadioKeydown<T>(event: KeyboardEvent, values: readonly T[], current: T, select: (v: T) => void): void {
-    const index = values.indexOf(current);
-    const last = values.length - 1;
-    const targets: Record<string, number> = {
-      ArrowRight: index === last ? 0 : index + 1,
-      ArrowDown: index === last ? 0 : index + 1,
-      ArrowLeft: index === 0 ? last : index - 1,
-      ArrowUp: index === 0 ? last : index - 1,
-      Home: 0,
-      End: last,
-    };
-    const next = targets[event.key];
-    if (next === undefined) {
-      return;
-    }
-    event.preventDefault();
-    select(values[next]);
-    const group = (event.currentTarget as HTMLElement).closest('[role="radiogroup"]');
-    group?.querySelectorAll<HTMLElement>('[role="radio"]').item(next)?.focus();
-  }
+  protected readonly onRadioKeydown = handleRadioKeydown;
 
   /** Piège le focus : Tab et Maj+Tab bouclent à l'intérieur de la modale. */
   protected onKeydown(event: KeyboardEvent): void {

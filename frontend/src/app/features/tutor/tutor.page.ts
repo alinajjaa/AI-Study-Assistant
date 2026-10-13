@@ -6,7 +6,7 @@ import { ChatMessage, UploadResponse } from '../../core/models/tutor.models';
 import { ExamJobsService } from '../../core/services/exam-jobs.service';
 import { TutorApiService } from '../../core/services/tutor-api.service';
 import { ChatThread } from './components/chat-thread/chat-thread';
-import { CourseSelector } from './components/course-selector/course-selector';
+import { CourseSelector } from '../../shared/components/course-selector/course-selector';
 import { ExamDialog } from './components/exam-dialog/exam-dialog';
 import { QuestionInput } from './components/question-input/question-input';
 import { UploadPanel } from './components/upload-panel/upload-panel';
