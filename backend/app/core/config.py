@@ -8,6 +8,11 @@ LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://localhost:11434/v1")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "ollama")
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen2.5:3b")
 LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "120"))  # secondes avant d'abandonner un appel au LLM
+# Fournisseur : "openai" (API compatible OpenAI : Ollama, par défaut) ou "hf-local" (démonstration du
+# modèle affiné en phase 4 : modèle de base + adaptateur LoRA chargés avec transformers, en 4 bits)
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai").strip().lower()
+HF_BASE_MODEL = os.getenv("HF_BASE_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
+HF_ADAPTER = os.getenv("HF_ADAPTER", "")  # dépôt du Hub (<utilisateur>/study-tutor-qwen2.5-1.5b-lora) ou dossier local
 EMBED_MODEL = os.getenv("EMBED_MODEL", "intfloat/multilingual-e5-small")
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 COLLECTION = "courses"

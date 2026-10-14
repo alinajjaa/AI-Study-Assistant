@@ -1,0 +1,7 @@
+# Optionnel : uniquement pour LLM_PROVIDER=hf-local (démonstration du modèle affiné, phase 4).
+# L'entraînement se fait sur Google Colab (notebooks/finetune_lora.ipynb), pas en local.
+# torch doit être la version CUDA pour le GPU (le requirements.txt principal installe la version CPU) :
+#   pip install torch --index-url https://download.pytorch.org/whl/cu128
+peft>=0.15
+bitsandbytes>=0.45
+accelerate>=1.0

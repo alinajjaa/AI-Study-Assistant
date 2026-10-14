@@ -2,6 +2,7 @@ from openai import (
     OpenAI, APIConnectionError, APITimeoutError,
     AuthenticationError, RateLimitError, APIStatusError,
 )
+from app.core import config
 from app.core.config import LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, LLM_TIMEOUT
 from app.phase5_evaluation.stats import record
 
@@ -30,7 +31,15 @@ def chat(
 
     json_mode=True force une réponse en JSON valide.
     json_schema force en plus la réponse à respecter exactement ce schéma (sorties structurées).
+    LLM_PROVIDER=hf-local (désactivé par défaut) : le texte libre (réponses du tuteur) est écrit par le modèle
+    affiné local ; les demandes JSON restent sur le LLM configuré (l'adaptateur n'a appris que le style du tuteur).
     """
+    if config.LLM_PROVIDER == "hf-local" and not (json_mode or json_schema):
+        from app.phase4_finetuning.hf_local import generate
+
+        record("appels_llm")
+        return generate(system, user, max_tokens=max_tokens, temperature=temperature)
+
     if not LLM_API_KEY:
         raise LLMError("Clé API du LLM absente : renseigne LLM_API_KEY dans le fichier .env.")
 

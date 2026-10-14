@@ -7,3 +7,6 @@ storage/
 .pytest_cache/
 app/phase5_evaluation/results/*
 !app/phase5_evaluation/results/.gitkeep
+app/phase4_finetuning/data/*
+!app/phase4_finetuning/data/sample.jsonl
+app/phase4_finetuning/results/
