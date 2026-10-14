@@ -36,7 +36,7 @@ from pydantic import BaseModel, ValidationError
 
 from app.core import config
 from app.core.privacy import mask_pii
-from app.phase1_llm.llm import LLMError, chat
+from app.phase1_llm.llm import LLMError, chat, rate_limit_message
 from app.phase3_rag.rag import LEVEL_INSTRUCTIONS
 from app.phase6_agent.tools import AgentContext, _normalize, openai_tools, run_tool, validate_call
 
@@ -201,7 +201,7 @@ def _as_llm_error(e: Exception) -> LLMError:
     if isinstance(e, AuthenticationError):
         return LLMError("Clé API du LLM invalide.")
     if isinstance(e, RateLimitError):
-        return LLMError("Quota du fournisseur LLM atteint. Réessaie plus tard.")
+        return LLMError(rate_limit_message(e))
     if isinstance(e, APIStatusError):
         return LLMError(f"Le fournisseur LLM a renvoyé une erreur (code {e.status_code}).")
     return LLMError(f"Erreur du LLM : {type(e).__name__}.")
@@ -376,8 +376,10 @@ def default_llm() -> BaseChatModel:
             raise LLMError("Clé API du LLM absente : renseigne LLM_API_KEY dans le fichier .env.")
         from langchain_openai import ChatOpenAI
 
+        # max_retries : le client OpenAI réessaie aussi les erreurs 429 (limite de débit) avec une attente
         _llm = ChatOpenAI(base_url=config.LLM_BASE_URL, api_key=config.LLM_API_KEY, model=config.LLM_MODEL,
-                          temperature=0, timeout=config.LLM_TIMEOUT, max_retries=1)
+                          temperature=0, timeout=config.LLM_TIMEOUT,
+                          max_retries=max(1, config.LLM_RATE_LIMIT_RETRIES))
     return _llm
 
 

@@ -1,0 +1,23 @@
+# Secrets et données locales : jamais dans l'image
+.env
+.env.*
+!.env.example
+*.db
+storage/
+mlruns/
+
+# Environnement et caches
+.venv/
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+
+# Inutiles à l'exécution
+tests/
+Dockerfile
+.dockerignore
+app/phase5_evaluation/results/*
+!app/phase5_evaluation/results/.gitkeep
+app/phase4_finetuning/data/
+app/phase4_finetuning/results/
+app/phase4_finetuning/notebooks/

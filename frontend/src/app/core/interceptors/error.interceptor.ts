@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { Observable, catchError, from, switchMap, throwError } from 'rxjs';
 
-const UNREACHABLE = 'Backend injoignable : vérifie que uvicorn tourne sur le port 8000';
+const UNREACHABLE = 'Backend injoignable : vérifie que le serveur de l’API est démarré';
 const GENERIC = 'Une erreur inattendue est survenue';
 
 /** Extrait le champ "detail" renvoyé par FastAPI, s'il est lisible. */

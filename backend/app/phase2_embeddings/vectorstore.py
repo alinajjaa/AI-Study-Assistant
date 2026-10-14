@@ -5,10 +5,11 @@ from qdrant_client.models import (
     Distance, VectorParams, PointStruct, PayloadSchemaType,
     Filter, FieldCondition, MatchValue, FilterSelector, IsEmptyCondition, PayloadField,
 )
-from app.core.config import QDRANT_URL, COLLECTION
+from app.core.config import QDRANT_PATH, QDRANT_URL, COLLECTION
 from app.phase2_embeddings.embeddings import dimension
 
-client = QdrantClient(url=QDRANT_URL)
+# Serveur Qdrant (Docker) par défaut ; mode intégré (dossier local ou ":memory:") si QDRANT_PATH est défini
+client = QdrantClient(path=QDRANT_PATH) if QDRANT_PATH and QDRANT_PATH != ":memory:" else     QdrantClient(":memory:") if QDRANT_PATH == ":memory:" else QdrantClient(url=QDRANT_URL)
 
 
 def _filter(course: str | None = None, user_id: int | None = None) -> Filter | None:

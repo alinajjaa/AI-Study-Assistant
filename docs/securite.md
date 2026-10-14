@@ -90,7 +90,9 @@ Fichier : `backend/app/phase1_llm/llm.py` (même traduction dans l'agent, `_as_l
 | Serveur injoignable (Ollama arrêté) | « Impossible de joindre le serveur du LLM. Vérifie qu'Ollama est lancé. » | 503 |
 | `LLM_API_KEY` absente | « Clé API du LLM absente : renseigne LLM_API_KEY dans le fichier .env. » | 503 |
 | Clé invalide | « Clé API du LLM invalide. » | 503 |
-| Quota atteint (429) | « Quota du fournisseur LLM atteint. Réessaie plus tard. » | 503 |
+| Limite de débit (429) | attente du délai demandé puis nouvel essai (4 au plus) ; si la limite persiste : « Limite de débit du fournisseur LLM atteinte (trop de requêtes ou de jetons par minute). Réessaie plus tard. » | 503 |
+| Limite quotidienne (429, offre gratuite) | sans attendre : « Limite quotidienne du fournisseur LLM atteinte (offre gratuite). Réessaie dans X min, ou choisis un autre modèle (LLM_MODEL). » | 503 |
+| Modèle sans `json_schema` (400) | pas d'erreur : nouvel essai en `json_object`, sortie validée par Pydantic | — |
 | Autre erreur du fournisseur | « Le fournisseur LLM a renvoyé une erreur (code X). » | 503 |
 | Réponse vide | « Le modèle a renvoyé une réponse vide. Réessaie. » | 503 |
 

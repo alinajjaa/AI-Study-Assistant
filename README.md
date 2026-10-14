@@ -1,8 +1,9 @@
 # AI Study Assistant
 
 Assistant d'étude qui travaille **uniquement à partir des cours de l'étudiant** (PDF) : tuteur qui cite
-ses pages, examens notés sur 20, flashcards, résumés et un agent qui choisit le bon outil. Tout tourne
-en local : LLM **qwen2.5:7b** (Ollama), embeddings **multilingual-e5-small**, base vectorielle **Qdrant**.
+ses pages, examens notés sur 20, flashcards, résumés et un agent qui choisit le bon outil. En local : LLM
+**qwen2.5:7b** (Ollama), embeddings **multilingual-e5-small**, base vectorielle **Qdrant**. Déployable avec
+**Docker** et le LLM **qwen/qwen3.8-27b** de **Groq**, en local ou sur **Hugging Face Spaces**.
 
 > **Mini-projet** — Groupe : _à compléter (noms et prénoms des membres)_ · Classe : _à compléter_ ·
 > Encadrant : _à compléter_ · Année universitaire : _à compléter_
@@ -18,7 +19,8 @@ en local : LLM **qwen2.5:7b** (Ollama), embeddings **multilingual-e5-small**, ba
 7. [Tests](#tests)
 8. [Benchmark et MLflow](#benchmark-et-mlflow)
 9. [Fine-tuning LoRA](#fine-tuning-lora-phase-4-bis)
-10. [Documentation](#documentation)
+10. [Déploiement : Docker, Groq, Hugging Face Spaces](#déploiement--docker-groq-hugging-face-spaces)
+11. [Documentation](#documentation)
 
 ## Fonctionnalités
 
@@ -156,20 +158,26 @@ Fichier `backend/.env` (modèle : [backend/.env.example](backend/.env.example)).
 | `LLM_BASE_URL` | `http://localhost:11434/v1` | serveur LLM compatible OpenAI (Ollama, Groq, OpenAI) |
 | `LLM_API_KEY` | `ollama` | clé du fournisseur (non vide ; Ollama n'en vérifie pas la valeur) |
 | `LLM_MODEL` | `qwen2.5:3b` (mettre `qwen2.5:7b`) | modèle utilisé |
+| `GROQ_API_KEY` | vide | clé Groq ; prioritaire sur `LLM_API_KEY` quand `LLM_BASE_URL` pointe vers Groq |
 | `LLM_TIMEOUT` | `120` | secondes avant d'abandonner un appel |
+| `LLM_JSON_MODE` | `json_schema` | `json_object` : force ce mode (repli automatique sinon) |
+| `LLM_RATE_LIMIT_RETRIES` / `LLM_RATE_LIMIT_MAX_WAIT` | `4` / `60` | erreurs 429 : nouveaux essais et attente maximale (s) |
 | `LLM_PROVIDER` | `openai` | `hf-local` : démonstration du modèle affiné (optionnel) |
 | `HF_BASE_MODEL` / `HF_ADAPTER` | `Qwen/Qwen2.5-1.5B-Instruct` / vide | modèle de base et adaptateur LoRA pour `hf-local` |
 | `HF_TOKEN` | vide | jeton Hugging Face en lecture (optionnel) |
 | `EMBED_MODEL` | `intfloat/multilingual-e5-small` | modèle d'embeddings |
 | `QDRANT_URL` | `http://localhost:6333` | serveur Qdrant |
+| `QDRANT_PATH` | vide | Qdrant intégré sans serveur (dossier ou `:memory:`), prioritaire sur `QDRANT_URL` |
 | `JWT_SECRET` | **aucun (obligatoire)** | secret de signature des jetons |
 | `JWT_EXPIRE_HOURS` | `24` | durée de validité d'un jeton |
+| `CORS_ORIGINS` | `http://localhost:4200` | origines autorisées (séparées par des virgules) |
 | `DATABASE_URL` | `sqlite:///./study.db` | base de l'application |
 | `STORAGE_DIR` | `./storage` | PDF des examens générés |
 | `MLFLOW_ENABLED` | `true` | suivi MLflow des générations |
 | `MLFLOW_TRACKING_URI` | `sqlite:///mlruns/mlflow.db` | base MLflow |
 
-Le frontend appelle `http://localhost:8000/api` (`frontend/src/environments/`).
+Le frontend appelle `http://localhost:8000/api` avec `ng serve` (`environment.development.ts`) et `/api`
+(même origine) dans le build de production utilisé par Docker et le Space (`environment.ts`).
 
 ## Lancement
 
@@ -269,6 +277,35 @@ Démonstration optionnelle dans l'application : `LLM_PROVIDER=hf-local` et
 `HF_ADAPTER=Alinajjaa/study-tutor-qwen2.5-1.5b-lora` dans `backend/.env`
 (voir [backend/app/phase4_finetuning/README.md](backend/app/phase4_finetuning/README.md)).
 
+## Déploiement : Docker, Groq, Hugging Face Spaces
+
+Guide complet : [docs/deploiement.md](docs/deploiement.md).
+
+**Docker en local avec Groq** (Qdrant + backend + frontend nginx) : renseigner `JWT_SECRET` et `GROQ_API_KEY`
+dans `backend/.env`, puis :
+
+```powershell
+docker compose up --build -d
+docker compose ps        # qdrant, backend et frontend « healthy »
+```
+
+Application : http://localhost:8080 (base de données propre aux conteneurs, dans des volumes Docker).
+`docker compose down` arrête tout ; `docker compose down -v` efface aussi les données.
+
+**Groq** : `LLM_BASE_URL=https://api.groq.com/openai/v1`, `LLM_MODEL=qwen/qwen3.8-27b`, `GROQ_API_KEY`
+(profils commentés dans [backend/.env.example](backend/.env.example)). Repli automatique `json_schema` →
+`json_object`, attente et nouvel essai sur les erreurs 429 de l'offre gratuite.
+
+**Hugging Face Spaces** (SDK Docker, port 7860, Qdrant intégré, MLflow désactivé, données effacées au
+redémarrage) : fichiers dans [deploy/hf-space/](deploy/hf-space/), puis
+
+```powershell
+.\deploy\hf-space\prepare-space.ps1 -Destination ..\ai-study-assistant-space
+hf upload Alinajjaa/ai-study-assistant ..\ai-study-assistant-space . --repo-type=space
+```
+
+avec les secrets `GROQ_API_KEY` et `JWT_SECRET` dans les réglages du Space.
+
 ## Documentation
 
 | Document | Contenu |
@@ -278,4 +315,5 @@ Démonstration optionnelle dans l'application : `LLM_PROVIDER=hf-local` et
 | [docs/models.md](docs/models.md) | modèles, choix, paramètres, limites constatées |
 | [docs/evaluation.md](docs/evaluation.md) | méthode et résultats de l'évaluation |
 | [docs/securite.md](docs/securite.md) | confidentialité, authentification, gestion des erreurs, limites |
+| [docs/deploiement.md](docs/deploiement.md) | Docker local, Groq, Hugging Face Spaces, limites et sécurité du déploiement |
 | [backend/app/phase4_finetuning/README.md](backend/app/phase4_finetuning/README.md) | fine-tuning LoRA pas à pas |

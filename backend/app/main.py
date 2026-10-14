@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core import config
 from app.core.db import init_db
 from app.phase2_embeddings.vectorstore import ensure_collection
 from app.phase3_rag.routes import router as tutor_router
@@ -31,7 +32,7 @@ app = FastAPI(title="AI Study Assistant", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],  # frontend Angular
+    allow_origins=config.CORS_ORIGINS,  # frontend Angular (http://localhost:4200 par défaut, CORS_ORIGINS)
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["Content-Disposition", "X-Questions-Generated", "X-Questions-Expected", "X-Exam-Total", "X-Exam-Id"],

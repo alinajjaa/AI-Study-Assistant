@@ -1,0 +1,61 @@
+# AI Study Assistant en local avec Docker : Qdrant + backend FastAPI + frontend nginx.
+#   docker compose up --build        → http://localhost:8080
+#
+# Configuration : backend/.env (jamais copié dans les images, lu au démarrage). Par défaut le LLM est Groq
+# (clé GROQ_API_KEY dans backend/.env). Pour un autre fournisseur, sans modifier ce fichier :
+#   $env:DOCKER_LLM_BASE_URL="http://host.docker.internal:11434/v1"; $env:DOCKER_LLM_MODEL="qwen2.5:7b"
+name: ai-study-assistant
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.19.2
+    volumes:
+      - qdrant-data:/qdrant/storage
+    # Pas de port publié : seul le backend y accède (le Qdrant de développement garde le port 6333)
+    healthcheck:
+      test: ["CMD", "bash", "-c", ":> /dev/tcp/127.0.0.1/6333"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    env_file:
+      - path: backend/.env
+        required: true
+    # Prioritaire sur backend/.env : adresses des services Docker et chemins des volumes
+    environment:
+      LLM_BASE_URL: ${DOCKER_LLM_BASE_URL:-https://api.groq.com/openai/v1}
+      LLM_MODEL: ${DOCKER_LLM_MODEL:-qwen/qwen3.8-27b}
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_PATH: ""
+      DATABASE_URL: sqlite:////app/data/db/study.db
+      STORAGE_DIR: /app/data/storage
+      MLFLOW_TRACKING_URI: sqlite:////app/data/mlruns/mlflow.db
+      CORS_ORIGINS: http://localhost:8080
+    volumes:
+      - backend-db:/app/data/db
+      - backend-storage:/app/data/storage
+      - backend-mlruns:/app/data/mlruns
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Ollama de la machine hôte, si choisi
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  qdrant-data:
+  backend-db:
+  backend-storage:
+  backend-mlruns:

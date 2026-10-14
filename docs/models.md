@@ -30,12 +30,15 @@ Changer de fournisseur ne demande que le fichier `.env` :
 | Fournisseur | `LLM_BASE_URL` | `LLM_API_KEY` | `LLM_MODEL` |
 |---|---|---|---|
 | Ollama (par défaut) | `http://localhost:11434/v1` | `ollama` (valeur quelconque non vide) | `qwen2.5:7b` |
-| Groq | `https://api.groq.com/openai/v1` | clé Groq (`gsk_…`) | un modèle Groq qui gère le tool calling |
+| Groq | `https://api.groq.com/openai/v1` | `GROQ_API_KEY` (`gsk_…`), prioritaire sur `LLM_API_KEY` | `qwen/qwen3.8-27b` |
 | OpenAI | `https://api.openai.com/v1` | clé OpenAI | ex. `gpt-4o-mini` |
 
-Points à vérifier avant de passer à Groq : la prise en charge de `response_format: json_schema` dépend du
-modèle choisi, et les quotas gratuits produisent des erreurs 429 (gérées : message « Quota du fournisseur
-LLM atteint », réponse 503).
+Modèle Groq retenu : **qwen/qwen3.8-27b** (tool calling et `json_schema` pris en charge, bon en français ;
+modèle « preview » chez Groq). Les modèles gpt-oss échouent sur les schémas du projet et les modèles Llama ne
+sont pas accessibles avec la clé du projet. Le client replie automatiquement `json_schema` sur `json_object`
+si un modèle le refuse, et gère les erreurs 429 de l'offre gratuite (attente puis nouvel essai, message clair
+si la limite persiste). Détails, mesures et comparaison avec qwen2.5:7b : [deploiement.md](deploiement.md) et
+[evaluation.md](evaluation.md#28-qwen257b-en-local-contre-qwenqwen38-27b-sur-groq).
 
 ### Paramètres d'appel
 

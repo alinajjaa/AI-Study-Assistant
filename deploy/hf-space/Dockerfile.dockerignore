@@ -1,0 +1,30 @@
+# Exclusions du contexte de build de deploy/hf-space/Dockerfile (contexte : racine du dépôt).
+# prepare-space.ps1 le copie aussi en .dockerignore à la racine du Space.
+
+# Secrets et données locales : jamais dans le contexte ni dans l'image
+**/.env
+**/.env.*
+!backend/.env.example
+**/*.db
+backend/storage/
+backend/mlruns/
+backend/app/phase5_evaluation/results/
+backend/app/phase4_finetuning/data/
+backend/app/phase4_finetuning/results/
+backend/app/phase4_finetuning/notebooks/
+
+# Environnements, caches et builds
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+
+# Inutiles à l'image
+.git/
+docs/
+backend/tests/
+**/.vscode/
+**/.idea/

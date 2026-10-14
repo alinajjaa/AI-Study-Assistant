@@ -231,11 +231,81 @@ graine. Juge : qwen2.5:7b (température 0), qui ne sait pas quel modèle a écri
 
 ### 2.7 Tests automatisés
 
-- Backend : 128 tests `pytest` (LLM simulé, Qdrant en mémoire, base SQLite et MLflow temporaires).
-- Frontend : 26 fichiers de tests (vitest).
+- Backend : 171 tests `pytest` (LLM simulé, Qdrant en mémoire, base SQLite et MLflow temporaires), dont
+  ceux du repli `json_schema` → `json_object`, des erreurs 429 et du point d'entrée Hugging Face Spaces.
+- Frontend : 152 tests dans 26 fichiers (vitest).
 
 Ils vérifient le comportement du code (validateurs, routes, droits d'accès, confidentialité des traces),
 pas la qualité des réponses du modèle.
+
+### 2.8 qwen2.5:7b en local contre qwen/qwen3.8-27b sur Groq
+
+Même benchmark, même cours (Chapter1_Part_1), mêmes jeux de test, même code. Seul le LLM change :
+
+- **local** : qwen2.5:7b sur Ollama, GPU RTX 4050 6 Go (runs du 14 octobre, matin) ;
+- **Groq** : qwen/qwen3.8-27b, offre gratuite (30 requêtes et 8 000 jetons par minute), runs du 14 octobre à
+  17 h 30–17 h 50.
+
+Les runs Groq ont été ajoutés à la même base MLflow (paramètre `modele_llm`) sans toucher aux runs qwen ; CSV :
+`Chapter1_Part_1_2026-10-14_1735.csv` (tuteur, résumé), `Chapter1_Part_1_2026-10-14_1750.csv` (examens,
+flashcards), `agent_eval_20261014_173341.csv`.
+
+| Mesure | qwen2.5:7b (local) | qwen3.8-27b (Groq) |
+|---|---|---|
+| **Examens complets** (3 runs) | | |
+| Points | 20/20 (3/3) | 20/20 (3/3) |
+| Questions obtenues | 15, 15, 18 (une question de réflexion ratée, remplacée par 4 V/F) | 15, 15, 15 |
+| `taux_reussite` | 0.982 | **1.000** |
+| Durée moyenne (écart-type) | 158 s (15) | 151 s (48) |
+| Appels au LLM | 48.7 | **41.0** |
+| `rendement_appels` | 0.332 | **0.371** |
+| Rejets de validation | 17.9 % | **5.1 %** |
+| Rejets par vérification | **5.4 %** | 22.8 % |
+| Rejets pour doublon | 16.4 % | **0 %** |
+| **Flashcards** (3 runs, 10 cartes) | | |
+| Cartes obtenues | 10/10 (3/3) | 10/10 (3/3) |
+| Durée moyenne (écart-type) | 129 s (23) | **122 s** (3) |
+| Appels au LLM | 45.0 | **35.3** |
+| `rendement_appels` | 0.227 | **0.283** |
+| Rejets de validation | 29.7 % | **7.1 %** |
+| Rejets par vérification | 12.6 % | **0 %** |
+| Rejets pour doublon | **8.6 %** | 19.6 % |
+| **Résumé du cours entier** (1 run) | | |
+| Sections / puces | 5 / 22 | 5 / 22 |
+| Puces avec page valide | 100 % | 100 % |
+| Durée | **42 s** | 67 s |
+| Appels / rejets de validation | 6 / 0 | 7 / 2 (dont la vue d'ensemble : repli sans invention) |
+| **Tuteur RAG** (14 questions) | | |
+| `hit_3` (12 questions du cours) | 100 % | 100 % |
+| Réponse trouvée | 100 % | 100 % |
+| Refus hors cours (2 questions) | 100 % | 100 % |
+| Durée moyenne par question | 6.1 s | **3.6 s** |
+| **Agent** (26 demandes, choix de l'outil) | | |
+| `taux_bon_outil` | 100 % | 100 % |
+| `taux_repli` | 15 % (4/26) | 19 % (5/26) |
+| Durée moyenne du choix | **1.8 s** | 9.2 s |
+| Replis `json_schema` → `json_object` | — | 0 |
+| Attentes sur erreur 429 comptées | — | 4 (examens) + 3 (résumé) + 1 (tuteur) |
+
+Lecture :
+
+- **Qualité équivalente sur ce cours** : mêmes scores aux examens, aux flashcards, au tuteur et à l'agent.
+  Le modèle de Groq, plus gros (27 milliards de paramètres contre 7), respecte mieux les consignes de format
+  (rejets de validation divisés par 3 à 4) et a besoin de moins d'appels par élément.
+- **Ses rejets se déplacent** : plus de questions écartées par l'auto-vérification aux examens (22.8 %) et plus
+  de doublons de cartes (19.6 %). Le contrôle en aval fonctionne donc avec les deux modèles.
+- **Les durées Groq sont limitées par le débit, pas par le modèle** : un appel Groq prend 0,3 à 1,7 s, mais la
+  limite de 8 000 jetons par minute impose des attentes. Elles sont gérées par le client OpenAI (un nouvel essai
+  silencieux) puis par `chat()` (compteur `attentes_limite_debit`, qui ne compte que ces dernières). C'est
+  visible pour l'agent : 0,5 s par appel sans limite, 9,2 s en moyenne pendant l'évaluation, où les 26 demandes
+  s'enchaînent sans pause. Pour un seul utilisateur, le tuteur répond plus vite que le GPU local (3,6 s).
+- **Aucun repli `json_object`** n'a été nécessaire : qwen3.8-27b accepte tous les schémas Pydantic du projet.
+- Le benchmark Groq complet (tuteur, résumé, 3 examens, 3 paquets, agent) a tenu dans la limite quotidienne de
+  l'offre gratuite ; le relancer plusieurs fois le même jour pourrait l'atteindre.
+
+Limites de cette comparaison : 3 runs par génération et un seul cours ; runs Groq faits pendant que les images
+Docker se construisaient sur la même machine (sans effet sur Groq, mais les embeddings locaux partageaient le
+CPU) ; qwen3.8-27b est un modèle « preview » chez Groq, ses résultats peuvent changer.
 
 ## 3. Limites
 
