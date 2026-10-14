@@ -22,7 +22,7 @@ logger = logging.getLogger("uvicorn.error")
 
 os.environ.setdefault("MLFLOW_DISABLE_AGENT_HINT", "1")  # message d'aide de MLflow inutile ici
 
-EXPERIMENTS = ("exam", "flashcards", "tutor")
+EXPERIMENTS = ("exam", "flashcards", "tutor", "summary")
 EXAM_KINDS = ("qcm", "vrai_faux", "courte", "ouverte")
 
 # Un seul thread : l'enregistrement après une requête ne retarde pas la réponse à l'étudiant
@@ -155,6 +155,21 @@ def tutor_run(stats: GenerationStats, *, course: str | None, level: str | None,
     return params, metrics, _tags(source, error)
 
 
+def summary_run(stats: GenerationStats, *, course: str, mode: str, level: str | None = None,
+                content=None, error: Exception | None = None, source: str = "app") -> tuple[dict, dict, dict]:
+    """(params, métriques, tags) d'un résumé. Le thème demandé (texte de l'étudiant) n'est jamais enregistré."""
+    metrics = {
+        **stats.as_metrics(),
+        "reussi": 1 if content is not None else 0,
+        "taux_puces_page_valide": _ratio(stats.get("puces_page_valide"), stats.get("puces_proposees")),
+        "taux_rejet_validation": _ratio(stats.get("rejets_validation"), stats.get("appels_generation")),
+    }
+    params = {"modele_llm": config.LLM_MODEL, "cours": course, "mode": mode,
+              "niveau": (level or "aucun") if mode == "topic" else None,
+              "passages": int(stats.values.get("passages", 0))}
+    return params, metrics, _tags(source, error)
+
+
 @contextmanager
 def track_tutor(*, course: str | None, level: str | None, source: str = "app") -> Iterator[GenerationStats]:
     """Fournit un collecteur pour une réponse du tuteur, puis enregistre le run (même en cas d'erreur)."""
@@ -173,7 +188,8 @@ def track_tutor(*, course: str | None, level: str | None, source: str = "app") -
 # Résumé pour GET /api/stats
 # ---------------------------------------------------------------------------
 
-SUCCESS_METRIC = {"exam": "taux_reussite", "flashcards": "taux_reussite", "tutor": "reponse_trouvee"}
+SUCCESS_METRIC = {"exam": "taux_reussite", "flashcards": "taux_reussite", "tutor": "reponse_trouvee",
+                  "summary": "reussi"}
 
 
 def _mean(values: list[float]) -> float | None:

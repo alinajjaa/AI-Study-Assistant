@@ -142,3 +142,17 @@
     max-width: 92%;
   }
 }
+
+a.suggestion {
+  text-decoration: none;
+}
+
+.summary-hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+}
+
+.summary-hint a {
+  color: var(--accent);
+  font-weight: 600;
+}

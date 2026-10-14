@@ -11,6 +11,7 @@ from app.phase8_personal.courses import add_course, list_user_courses, require_c
 from app.phase8_personal.deps import get_current_user
 from app.phase8_personal.models import User
 from app.phase8_personal.profile import weak_points
+from app.phase9_summaries.routes import invalidate_course_summaries
 
 router = APIRouter(prefix="/api", tags=["Course Tutor"])
 
@@ -38,6 +39,7 @@ def upload_course(file: UploadFile = File(...), course: str | None = Form(None),
     if n == 0:
         raise HTTPException(422, "Aucun texte extrait : le PDF est probablement scanné (images)")
     add_course(session, user.id, name)
+    invalidate_course_summaries(session, user.id, name)  # le résumé en cache ne correspond plus
     return {"course": name, "chunks": n}
 
 

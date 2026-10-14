@@ -28,6 +28,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/flashcards/flashcards.page').then((m) => m.FlashcardsPage),
   },
   {
+    path: 'summaries',
+    title: 'Résumés · AI Study Assistant',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/summaries/summaries.page').then((m) => m.SummariesPage),
+  },
+  {
     path: 'exams',
     title: 'Mes examens · AI Study Assistant',
     canActivate: [authGuard],

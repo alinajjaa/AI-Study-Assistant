@@ -377,7 +377,7 @@ def test_benchmark_tuteur_de_bout_en_bout(client, llm, monkeypatch, tmp_path, ca
     headers = register(client, "ali@example.com")
     upload(client, headers, "CNN")
 
-    assert benchmark.main(["ali@example.com", "CNN", "--skip-exam", "--skip-flashcards"]) == 0
+    assert benchmark.main(["ali@example.com", "CNN", "--skip-exam", "--skip-flashcards", "--skip-summary"]) == 0
     out = capsys.readouterr().out
     assert "[tuteur 1/4]" in out and "hit_3" in out and "hors cours" in out
     csv_files = list((tmp_path / "results").glob("CNN_*.csv"))
@@ -413,7 +413,7 @@ def test_benchmark_refus_correct_hors_cours(client, llm, monkeypatch, tmp_path, 
     headers = register(client, "ali@example.com")
     upload(client, headers, "CNN")
 
-    assert benchmark.main(["ali@example.com", "CNN", "--skip-exam", "--skip-flashcards"]) == 0
+    assert benchmark.main(["ali@example.com", "CNN", "--skip-exam", "--skip-flashcards", "--skip-summary"]) == 0
     assert "refus correct" in capsys.readouterr().out
     content = next((tmp_path / "results").glob("CNN_*.csv")).read_text(encoding="utf-8")
     assert "tutor,refus_correct,1.0,0.0,1" in content

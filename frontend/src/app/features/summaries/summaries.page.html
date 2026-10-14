@@ -1,0 +1,122 @@
+<header class="page-header">
+  <h1>Résumés</h1>
+  <p class="lede">Le résumé lit tout le cours, section par section, avec les pages pour vérifier.</p>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" aria-label="Choix du cours">
+    <app-course-selector
+      [courses]="courses()"
+      [selected]="selectedCourse()"
+      [loading]="coursesLoading()"
+      [allowAll]="false"
+      [actions]="false"
+      [jobs]="courseJobs()"
+      jobLabel="Résumé en cours…"
+      [now]="jobs.now()"
+      (selectedChange)="onSelectCourse($event)"
+    />
+  </aside>
+
+  <section class="main" aria-label="Résumés du cours">
+    @if (selectedCourse(); as course) {
+      <div class="card actions">
+        <div class="actions__course">
+          <h2 class="card__title">Tout le cours</h2>
+          <p class="hint">Une vue d'ensemble puis l'essentiel de chaque partie de « {{ course }} ».</p>
+          <button type="button" class="btn" [disabled]="courseRunning()" (click)="summarizeCourse()">
+            @if (courseRunning()) {
+              Résumé en cours… {{ elapsed() }}
+            } @else {
+              Résumer tout le cours
+            }
+          </button>
+        </div>
+
+        <form class="actions__topic" (submit)="explain($event)">
+          <label class="card__title" for="topic">Expliquer un thème</label>
+          <p class="hint">Par exemple « les connecteurs » ou « la différence entre composant et connecteur ».</p>
+          <div class="topic-row">
+            <input
+              id="topic"
+              class="field"
+              type="text"
+              maxlength="200"
+              placeholder="Thème du cours à expliquer"
+              [value]="topic()"
+              (input)="onTopicInput($event)"
+            />
+            <button type="submit" class="btn" [disabled]="!canExplain()">
+              {{ topicRunning() ? 'Explication…' : 'Expliquer' }}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      @if (current(); as summary) {
+        <app-summary-view
+          [summary]="summary"
+          [regenerating]="isRegenerating(summary)"
+          (regenerate)="onRegenerate(summary)"
+        />
+      }
+
+      <section class="card" aria-labelledby="my-summaries-title">
+        <div class="list-header">
+          <h2 id="my-summaries-title" class="card__title">Mes résumés</h2>
+          @if (listLoading()) {
+            <app-loader size="sm" />
+          }
+        </div>
+        @if (summaries().length === 0) {
+          @if (!listLoading()) {
+            <p class="hint">Aucun résumé pour ce cours pour l'instant.</p>
+          }
+        } @else {
+          <ul class="summary-list">
+            @for (item of summaries(); track item.id) {
+              <li class="summary-item" [class.summary-item--active]="current()?.id === item.id">
+                <div class="summary-item__info">
+                  <span class="summary-item__label">{{ itemLabel(item) }}</span>
+                  <span class="hint">
+                    {{ itemDate(item) }} ·
+                    {{ item.found ? item.section_count + ' section' + (item.section_count > 1 ? 's' : '') : 'thème absent du cours' }}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn--ghost btn--sm"
+                  [disabled]="opening() !== null"
+                  [attr.aria-label]="'Ouvrir le résumé ' + itemLabel(item)"
+                  (click)="open(item)"
+                >
+                  {{ opening() === item.id ? 'Ouverture…' : 'Ouvrir' }}
+                </button>
+                <button
+                  type="button"
+                  class="icon-btn icon-btn--danger"
+                  [attr.aria-label]="'Supprimer le résumé ' + itemLabel(item)"
+                  title="Supprimer"
+                  (click)="remove(item)"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="m6 7 1 13h10l1-13" /><path d="M9 7V4h6v3" />
+                  </svg>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    } @else {
+      <div class="card">
+        @if (coursesLoading()) {
+          <p class="hint">Chargement des cours…</p>
+        } @else {
+          <h2 class="card__title">Aucun cours</h2>
+          <p class="hint">Ajoute d'abord un cours en PDF depuis le <a routerLink="/tutor">tuteur</a>.</p>
+        }
+      </div>
+    }
+  </section>
+</div>

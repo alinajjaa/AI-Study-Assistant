@@ -1,7 +1,9 @@
-"""Benchmark hors ligne : N examens complets, N paquets de 10 flashcards et le jeu de questions du tuteur.
+"""Benchmark hors ligne : N examens complets, N paquets de 10 flashcards, le jeu de questions du tuteur
+ et un résumé du cours entier.
 
 Usage :
-    python -m app.phase5_evaluation.benchmark <email> <cours> [--n 3] [--skip-exam] [--skip-flashcards] [--skip-tutor]
+    python -m app.phase5_evaluation.benchmark <email> <cours> [--n 3] [--skip-exam] [--skip-flashcards]
+        [--skip-tutor] [--skip-summary]
 
 Chaque génération est enregistrée dans MLflow (tag source=benchmark). À la fin : un tableau récapitulatif
 (moyenne et écart-type de chaque métrique, par expérience) dans la console et dans
@@ -27,10 +29,11 @@ from app.phase2_embeddings.vectorstore import search
 from app.phase3_rag.rag import answer
 from app.phase4_exam.generator import generate_exam
 from app.phase5_evaluation.stats import GenerationStats
-from app.phase5_evaluation.tracking import exam_run, flashcards_run, log_run, tutor_run
+from app.phase5_evaluation.tracking import exam_run, flashcards_run, log_run, summary_run, tutor_run
 from app.phase7_flashcards.generator import generate_flashcards
 from app.phase8_personal.courses import get_user_course
 from app.phase8_personal.models import User
+from app.phase9_summaries.generator import generate_summary
 
 HERE = Path(__file__).parent
 DATASETS = HERE / "datasets"
@@ -145,6 +148,26 @@ def run_tutor(course: str, user: User) -> list[dict]:
     return rows
 
 
+def run_summary(course: str, user_id: int) -> list[dict]:
+    """Un résumé du cours entier (toujours regénéré, sans le cache) : durée, sections, puces avec page valide."""
+    _line("[résumé 1/1] résumé du cours entier…")
+    stats, content, error = GenerationStats(), None, None
+    try:
+        content = generate_summary(course, "course", user_id=user_id, stats=stats)
+    except Exception as e:  # noqa: BLE001
+        error = e
+    params, metrics, tags = summary_run(stats, course=course, mode="course", content=content, error=error,
+                                        source=SOURCE)
+    log_run("summary", params, metrics, tags)
+    if error:
+        _line(f"[résumé 1/1] ÉCHEC ({type(error).__name__}) après {metrics.get('duree_s', 0):.0f} s")
+    else:
+        _line(f"[résumé 1/1] {metrics.get('sections', 0):.0f} sections · {metrics.get('puces', 0):.0f} puces"
+              f" · {metrics['taux_puces_page_valide']:.0%} des puces proposées avec une page valide"
+              f" · {metrics.get('appels_llm', 0):.0f} appels LLM · {metrics['duree_s']:.0f} s")
+    return [metrics]
+
+
 def summary_rows(results: dict[str, list[dict]]) -> list[dict]:
     """Moyenne et écart-type de chaque métrique, par expérience."""
     rows = []
@@ -193,6 +216,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-exam", action="store_true")
     parser.add_argument("--skip-flashcards", action="store_true")
     parser.add_argument("--skip-tutor", action="store_true")
+    parser.add_argument("--skip-summary", action="store_true")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.WARNING, format="  %(levelname)s : %(message)s")
 
@@ -218,6 +242,8 @@ def main(argv: list[str] | None = None) -> int:
         results["flashcards"] = run_flashcards(args.n, args.course, user.id)
     if not args.skip_tutor:
         results["tutor"] = run_tutor(args.course, user)
+    if not args.skip_summary:
+        results["summary"] = run_summary(args.course, user.id)
     results = {k: v for k, v in results.items() if v}
 
     if not results:

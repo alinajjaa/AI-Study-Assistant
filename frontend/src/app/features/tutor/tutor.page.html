@@ -48,7 +48,11 @@
         <app-loader label="Chargement de la conversation…" />
       </div>
     } @else {
-      <app-chat-thread [messages]="conversations.messages()" (suggestion)="onSuggestion($event)" />
+      <app-chat-thread
+        [messages]="conversations.messages()"
+        [course]="selectedCourse()"
+        (suggestion)="onSuggestion($event)"
+      />
     }
     <app-question-input
       class="composer"

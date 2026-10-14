@@ -1,0 +1,53 @@
+<article class="card summary" aria-labelledby="summary-title">
+  <header class="summary__header">
+    <div>
+      <h2 id="summary-title" class="card__title">{{ title() }}</h2>
+      <p class="hint">
+        Généré le {{ date() }}
+        @if (summary().cached) {
+          · résumé déjà enregistré
+        }
+      </p>
+    </div>
+    <button type="button" class="btn btn--ghost btn--sm" [disabled]="regenerating()" (click)="regenerate.emit()">
+      {{ regenerating() ? 'Régénération…' : 'Régénérer' }}
+    </button>
+  </header>
+
+  @if (summary().content.found) {
+    <section class="overview" aria-label="Vue d'ensemble">
+      <h3 class="overview__title">Vue d'ensemble</h3>
+      <p>{{ summary().content.overview }}</p>
+    </section>
+
+    <div class="sections">
+      @for (section of summary().content.sections; track $index; let first = $first) {
+        <details class="section" [open]="first">
+          <summary class="section__summary">
+            <span class="section__title">{{ section.title }}</span>
+            @if (section.pages.length) {
+              <span class="section__pages">{{ formatPages(section.pages) }}</span>
+            }
+          </summary>
+          <ul class="bullets">
+            @for (bullet of section.bullets; track $index) {
+              <li>
+                @for (part of parts(bullet); track $index) {
+                  @if (part.kind === 'text') {
+                    {{ part.text }}
+                  } @else {
+                    @for (page of part.pages; track page) {
+                      <span class="page-ref" [title]="'Page ' + page + ' du cours'">p.{{ page }}</span>
+                    }
+                  }
+                }
+              </li>
+            }
+          </ul>
+        </details>
+      }
+    </div>
+  } @else {
+    <p class="alert alert--warning" role="status">{{ summary().content.overview }}</p>
+  }
+</article>
