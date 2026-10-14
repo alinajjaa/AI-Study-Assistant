@@ -1,0 +1,59 @@
+@if (messages().length === 0) {
+  <div class="empty">
+    <h2 class="empty__title">Que veux-tu faire aujourd'hui ?</h2>
+    <p class="empty__text">
+      Demande ce que tu veux sur ton cours : une explication, un résumé, un quiz pour te tester,
+      des flashcards ou tes progrès. L'assistant choisit l'outil adapté et répond uniquement à partir de tes cours.
+    </p>
+  </div>
+} @else {
+  <ol class="thread" aria-label="Échanges avec l'assistant">
+    @for (message of messages(); track message.id) {
+      <li class="message">
+        <div class="student">
+          <p class="meta">Toi · <span class="meta__course">{{ message.course ?? 'Tous les cours' }}</span></p>
+          <p class="bubble">{{ message.question }}</p>
+        </div>
+
+        <div class="assistant">
+          <span class="avatar" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+              <path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z" /><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+            </svg>
+          </span>
+          <div class="assistant__body">
+            @switch (message.status) {
+              @case ('pending') {
+                <div class="working">
+                  <app-loader variant="dots" [label]="working(message)" />
+                  @if (isLong(message)) {
+                    <p class="hint working__hint">
+                      Cela peut prendre 1 à 3 minutes. Tu peux changer de page : la réponse s'affichera ici.
+                    </p>
+                  }
+                </div>
+              }
+              @case ('error') {
+                <p class="alert alert--error">Pas de réponse : {{ message.error }}</p>
+              }
+              @case ('done') {
+                @if (message.response; as response) {
+                  <app-companion-reply
+                    [response]="response"
+                    (chooseCourse)="chooseCourse.emit({ course: $event, question: message.question })"
+                  />
+                }
+                @for (extra of extras(message); track extra.messageId ?? $index) {
+                  <app-companion-reply
+                    [response]="extra"
+                    (chooseCourse)="chooseCourse.emit({ course: $event, question: message.question })"
+                  />
+                }
+              }
+            }
+          </div>
+        </div>
+      </li>
+    }
+  </ol>
+}

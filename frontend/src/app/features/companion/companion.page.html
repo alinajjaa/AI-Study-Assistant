@@ -1,0 +1,129 @@
+<header class="page-header">
+  <h1>Assistant</h1>
+  <p class="lede">
+    Pose tes questions, résume, entraîne-toi avec des quiz et des flashcards, suis tes progrès : tout part de tes cours.
+  </p>
+</header>
+
+@if (error(); as message) {
+  <div class="banner" role="alert">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="9" /><path d="M12 7v6" /><path d="M12 16.5h.01" />
+    </svg>
+    <p class="banner__text">{{ message }}</p>
+    <button type="button" class="icon-btn banner__close" aria-label="Fermer le message d'erreur" (click)="dismissError()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+        <path d="M6 6l12 12M18 6 6 18" />
+      </svg>
+    </button>
+  </div>
+}
+
+<div class="layout">
+  <aside class="sidebar" aria-label="Conversations et cours">
+    <app-conversation-list
+      [conversations]="conversations.conversations()"
+      [activeId]="conversations.activeId()"
+      [loading]="conversations.loadingList()"
+      (selectConversation)="onSelectConversation($event)"
+      (newConversation)="onNewConversation()"
+      (rename)="onRenameConversation($event)"
+      (remove)="onDeleteConversation($event)"
+    />
+    <app-course-selector
+      [courses]="courses()"
+      [selected]="selectedCourse()"
+      [loading]="coursesLoading()"
+      [deleting]="deleting()"
+      [jobs]="jobStarts()"
+      [jobLabels]="jobLabels()"
+      [examJobs]="examJobs.jobs()"
+      [now]="now()"
+      (selectedChange)="onSelectCourse($event)"
+      (deleteCourse)="onDeleteCourse($event)"
+      (generateExam)="onOpenExam($event)"
+    />
+    <app-upload-panel (uploaded)="onUploaded($event)" />
+  </aside>
+
+  <section class="main" aria-label="Discussion avec l'assistant">
+    <div class="toolbar">
+      <div class="course-picker">
+        <label class="label" for="companion-course">Cours</label>
+        <select
+          id="companion-course"
+          class="field course-select"
+          [disabled]="coursesLoading()"
+          (change)="onCourseChange($event)"
+        >
+          <option value="" [selected]="selectedCourse() === null">Tous les cours</option>
+          @for (course of courses(); track course) {
+            <option [value]="course" [selected]="course === selectedCourse()">{{ course }}</option>
+          }
+        </select>
+        @if (coursesLoading()) {
+          <app-loader size="sm" />
+        }
+      </div>
+    </div>
+
+    @if (conversations.loadingMessages()) {
+      <div class="card loading-messages">
+        <app-loader label="Chargement de la conversation…" />
+      </div>
+    } @else {
+      <app-companion-thread
+        class="thread"
+        [messages]="conversations.messages()"
+        [progress]="companion.progress()"
+        [now]="companion.now()"
+        (chooseCourse)="onChooseCourse($event)"
+      />
+    }
+
+    <!-- Zone de saisie fixe : boutons rapides au-dessus du champ, dans le même bloc opaque -->
+    <div class="composer">
+      <ul class="quick-actions" aria-label="Demandes rapides">
+        @for (action of quickActions; track action.label) {
+          <li>
+            <button type="button" class="quick" [disabled]="asking()" (click)="onQuickAction(action)">
+              @switch (action.icon) {
+                @case ('summary') {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M4 6h16M4 12h16M4 18h10" />
+                  </svg>
+                }
+                @case ('quiz') {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14" /><path d="M12 17h.01" />
+                  </svg>
+                }
+                @case ('cards') {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <rect x="3" y="6" width="14" height="14" rx="2" /><path d="M7 3h12a2 2 0 0 1 2 2v12" />
+                  </svg>
+                }
+                @case ('progress') {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+                  </svg>
+                }
+              }
+              {{ action.label }}
+            </button>
+          </li>
+        }
+      </ul>
+      <app-question-input
+        [(text)]="draft"
+        [loading]="asking()"
+        [course]="selectedCourse()"
+        label="Ta demande"
+        placeholder="Demande ce que tu veux…"
+        (ask)="send($event)"
+      />
+    </div>
+  </section>
+</div>
+
+<app-exam-dialog [course]="examCourse()" (generate)="onGenerateExam($event)" (closed)="onExamDialogClosed()" />

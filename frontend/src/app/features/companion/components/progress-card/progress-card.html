@@ -1,0 +1,58 @@
+<article class="progress" aria-label="Ta progression">
+  <header class="progress__header">
+    <h3 class="progress__title">Ta progression</h3>
+    <span class="level">Niveau {{ level() }}</span>
+  </header>
+
+  <dl class="stats">
+    <div class="stat">
+      <dt>Cours</dt>
+      <dd>{{ progress().stats.courses }}</dd>
+    </div>
+    <div class="stat">
+      <dt>Questions posées</dt>
+      <dd>{{ progress().stats.questions }}</dd>
+    </div>
+    <div class="stat">
+      <dt>Cartes révisées</dt>
+      <dd>{{ progress().stats.cards_reviewed }}</dd>
+    </div>
+    <div class="stat">
+      <dt>Cartes sues</dt>
+      <dd>{{ rate(progress().stats.known_rate) }}</dd>
+    </div>
+    <div class="stat">
+      <dt>Réponses de quiz</dt>
+      <dd>{{ progress().quiz.answers }}</dd>
+    </div>
+    <div class="stat">
+      <dt>Quiz réussis</dt>
+      <dd>{{ rate(progress().quiz.correct_rate) }}</dd>
+    </div>
+  </dl>
+
+  @if (suggestion(); as text) {
+    <p class="suggestion">{{ text }} Tu peux le changer dans ton profil.</p>
+  }
+
+  <h4 class="weak-title">Points faibles</h4>
+  @if (progress().weak_points.length === 0) {
+    <p class="hint">Aucun pour l'instant : ils apparaissent après tes révisions de flashcards et tes quiz.</p>
+  } @else {
+    <ul class="weak-list">
+      @for (point of progress().weak_points; track point.course + point.concept) {
+        <li class="weak">
+          <div class="weak__info">
+            <span class="weak__concept">{{ point.concept }}</span>
+            <span class="hint">{{ point.course }} · {{ weakLabel(point) }}</span>
+          </div>
+          <div class="weak__bar" aria-hidden="true">
+            <span [style.width.%]="point.to_review_rate * 100"></span>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  <a class="btn btn--ghost btn--sm profile-link" routerLink="/profile">Voir mon profil</a>
+</article>

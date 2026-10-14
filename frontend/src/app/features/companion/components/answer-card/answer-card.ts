@@ -1,6 +1,6 @@
 import { Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 import { marked } from 'marked';
-import { AskResponse } from '../../../../core/models/tutor.models';
+import { AskResponse, isOffCourse } from '../../../../core/models/tutor.models';
 import { SourcesList } from '../sources-list/sources-list';
 
 /** Références de pages citées par le LLM : [p.3], [p. 3], [p.3, p.5], [p.3, 5]… */
@@ -37,8 +37,8 @@ export class AnswerCard {
 
   readonly response = input.required<AskResponse>();
 
-  /** Aucune source : l'information n'est pas dans le cours. */
-  protected readonly offCourse = computed(() => this.response().sources.length === 0);
+  /** L'information n'est pas dans le cours : seule la mention « Hors du cours » est affichée. */
+  protected readonly offCourse = computed(() => isOffCourse(this.response()));
   protected readonly html = computed(() => {
     const { answer, sources } = this.response();
     return renderAnswer(answer, new Set(sources.map((s) => s.page)));

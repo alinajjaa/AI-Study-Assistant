@@ -117,7 +117,7 @@ def ask_in_conversation(body: AskInConversation, conversation: Conversation = De
     conversation.updated_at = utcnow()
     question = Message(conversation_id=conversation.id, role="user", content=body.question, course=body.course)
     reply = Message(conversation_id=conversation.id, role="assistant", content=result["answer"],
-                    course=body.course, sources=result["sources"], answered=result["answered"])
+                    course=body.course, sources=result["sources"], answered=result["answered"], kind="answer")
     session.add_all([conversation, question, reply])
     session.commit()
     for obj in (conversation, question, reply):

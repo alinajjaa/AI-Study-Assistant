@@ -1,11 +1,11 @@
 <form class="composer" (submit)="$event.preventDefault(); send()">
-  <label class="sr-only" for="question">Ta question</label>
+  <label class="sr-only" for="question">{{ label() }}</label>
   <textarea
     #textarea
     id="question"
     class="input"
     rows="1"
-    placeholder="Pose ta question sur le cours…"
+    [placeholder]="placeholder()"
     aria-describedby="question-hint"
     [value]="text()"
     (input)="onInput($event)"
@@ -14,7 +14,7 @@
 
   <div class="footer">
     <p id="question-hint" class="hint">
-      <span class="target">Cours : <strong>{{ course() ?? 'tous les cours' }}</strong></span>
+      <span class="target">Cours : <strong>{{ course() ?? noCourseLabel() }}</strong></span>
       <span class="shortcut"><kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">Entrée</kbd> pour envoyer</span>
     </p>
     @if (length() > 0) {

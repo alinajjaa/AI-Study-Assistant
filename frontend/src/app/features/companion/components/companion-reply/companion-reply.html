@@ -1,0 +1,44 @@
+@switch (kind()) {
+  @case ('answer') {
+    <app-answer-card [response]="response()" />
+  }
+  @case ('text') {
+    <div class="text">
+      <div class="markdown" [innerHTML]="html()"></div>
+      @if (courseChoices().length) {
+        <ul class="choices" aria-label="Choisis un cours">
+          @for (course of courseChoices(); track course) {
+            <li>
+              <button type="button" class="btn btn--ghost btn--sm" (click)="chooseCourse.emit(course)">
+                {{ course }}
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+  @default {
+    <div class="rich">
+      @if (response().answer) {
+        <div class="markdown intro" [innerHTML]="html()"></div>
+      }
+      @if (response().payload) {
+        @switch (kind()) {
+          @case ('quiz') {
+            <app-quiz-card [quiz]="quiz()" [messageId]="response().messageId ?? null" />
+          }
+          @case ('summary') {
+            <app-summary-view [summary]="summary()" [showRegenerate]="false" />
+          }
+          @case ('flashcards') {
+            <app-flashcards-card [deck]="deck()" />
+          }
+          @case ('progress') {
+            <app-progress-card [progress]="progress()" />
+          }
+        }
+      }
+    </div>
+  }
+}

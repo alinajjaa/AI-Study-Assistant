@@ -68,7 +68,7 @@ export class RegisterPage {
       .register(this.email().trim(), this.password(), this.level())
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: () => void this.router.navigateByUrl('/tutor'),
+        next: () => void this.router.navigateByUrl('/companion'),
         error: (err: unknown) => this.error.set(toMessage(err)),
       });
   }

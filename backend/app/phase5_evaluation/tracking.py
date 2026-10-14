@@ -22,7 +22,7 @@ logger = logging.getLogger("uvicorn.error")
 
 os.environ.setdefault("MLFLOW_DISABLE_AGENT_HINT", "1")  # message d'aide de MLflow inutile ici
 
-EXPERIMENTS = ("exam", "flashcards", "tutor", "summary")
+EXPERIMENTS = ("exam", "flashcards", "tutor", "summary", "agent")
 EXAM_KINDS = ("qcm", "vrai_faux", "courte", "ouverte")
 
 # Un seul thread : l'enregistrement après une requête ne retarde pas la réponse à l'étudiant
@@ -170,6 +170,23 @@ def summary_run(stats: GenerationStats, *, course: str, mode: str, level: str | 
     return params, metrics, _tags(source, error)
 
 
+def agent_run(*, tools: list[str], fallback: bool, duration_s: float, course: str | None, level: str | None,
+              error: Exception | None = None, source: str = "app") -> tuple[dict, dict, dict]:
+    """(params, métriques, tags) d'un message traité par l'agent Study Companion.
+
+    Seulement l'outil choisi et des nombres : jamais le texte du message de l'étudiant.
+    """
+    metrics = {
+        "duree_s": round(duration_s, 3),
+        "appels_outils": len(tools),
+        "repli": 1 if fallback else 0,
+        "succes": 0 if error else 1,
+    }
+    params = {"modele_llm": config.LLM_MODEL, "outil": "+".join(tools) or "aucun",
+              "repli": "oui" if fallback else "non", "cours": course or "aucun", "niveau": level or "aucun"}
+    return params, metrics, _tags(source, error)
+
+
 @contextmanager
 def track_tutor(*, course: str | None, level: str | None, source: str = "app") -> Iterator[GenerationStats]:
     """Fournit un collecteur pour une réponse du tuteur, puis enregistre le run (même en cas d'erreur)."""
@@ -189,7 +206,7 @@ def track_tutor(*, course: str | None, level: str | None, source: str = "app") -
 # ---------------------------------------------------------------------------
 
 SUCCESS_METRIC = {"exam": "taux_reussite", "flashcards": "taux_reussite", "tutor": "reponse_trouvee",
-                  "summary": "reussi"}
+                  "summary": "reussi", "agent": "succes"}
 
 
 def _mean(values: list[float]) -> float | None:
@@ -218,7 +235,7 @@ def summarize(max_runs: int = 2000) -> dict:
                 "runs": len(runs),
                 "duree_moyenne_s": _mean(values("duree_s")),
                 "taux_reussite_moyen": _mean(values(SUCCESS_METRIC[name])),
-                "taux_rejet_moyens": {} if name == "tutor" else rejects,
+                "taux_rejet_moyens": {} if name in ("tutor", "agent") else rejects,
             }
         return {"mlflow": True, "portee": "globale", "experiences": result}
     except Exception as e:  # noqa: BLE001

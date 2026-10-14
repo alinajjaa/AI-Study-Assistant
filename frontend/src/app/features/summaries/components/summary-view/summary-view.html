@@ -1,7 +1,7 @@
-<article class="card summary" aria-labelledby="summary-title">
+<article class="card summary" [attr.aria-labelledby]="titleId">
   <header class="summary__header">
     <div>
-      <h2 id="summary-title" class="card__title">{{ title() }}</h2>
+      <h2 [id]="titleId" class="card__title">{{ title() }}</h2>
       <p class="hint">
         Généré le {{ date() }}
         @if (summary().cached) {
@@ -9,9 +9,11 @@
         }
       </p>
     </div>
-    <button type="button" class="btn btn--ghost btn--sm" [disabled]="regenerating()" (click)="regenerate.emit()">
-      {{ regenerating() ? 'Régénération…' : 'Régénérer' }}
-    </button>
+    @if (showRegenerate()) {
+      <button type="button" class="btn btn--ghost btn--sm" [disabled]="regenerating()" (click)="regenerate.emit()">
+        {{ regenerating() ? 'Régénération…' : 'Régénérer' }}
+      </button>
+    }
   </header>
 
   @if (summary().content.found) {

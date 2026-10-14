@@ -17,7 +17,8 @@ async function navigate(url: string): Promise<string> {
       provideHttpClientTesting(),
       provideRouter([
         { path: 'login', canActivate: [guestGuard], component: Page },
-        { path: 'tutor', canActivate: [authGuard], component: Page },
+        { path: 'companion', canActivate: [authGuard], component: Page },
+        { path: 'tutor', redirectTo: 'companion' },
         { path: 'flashcards', canActivate: [authGuard], component: Page },
       ]),
     ],
@@ -40,9 +41,16 @@ describe('authGuard / guestGuard', () => {
     expect(await navigate('/flashcards')).toBe('/flashcards');
   });
 
-  it('renvoie un étudiant connecté de /login vers le tuteur', async () => {
+  it('renvoie un étudiant connecté de /login vers l’Assistant', async () => {
     localStorage.setItem(TOKEN_KEY, 'jeton');
-    expect(await navigate('/login')).toBe('/tutor');
+    expect(await navigate('/login')).toBe('/companion');
+  });
+
+  it('l’ancienne page /tutor mène à l’Assistant, toujours protégé', async () => {
+    expect(await navigate('/tutor')).toBe('/login?returnUrl=%2Fcompanion');
+    TestBed.resetTestingModule();
+    localStorage.setItem(TOKEN_KEY, 'jeton');
+    expect(await navigate('/tutor')).toBe('/companion');
   });
 
   it('laisse un visiteur ouvrir /login', async () => {

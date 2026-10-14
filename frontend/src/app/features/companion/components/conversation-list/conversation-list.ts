@@ -4,7 +4,7 @@ import { Loader } from '../../../../shared/components/loader/loader';
 
 const DATE_FORMAT = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
 
-/** Barre latérale « Conversations » du tuteur : nouvelle, sélection, renommer, supprimer. */
+/** Barre latérale « Conversations » de l'Assistant : nouvelle, sélection, renommer, supprimer. */
 @Component({
   selector: 'app-conversation-list',
   imports: [Loader],

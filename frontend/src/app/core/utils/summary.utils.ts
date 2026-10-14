@@ -34,14 +34,3 @@ export function formatPages(pages: readonly number[]): string {
   }
   return `p. ${sorted.join(', ')}`;
 }
-
-/**
- * Demande de résumé du cours entier tapée dans le tuteur (« résume le cours », « résumé du cours »,
- * « fais-moi un résumé de ce chapitre »…) : le tuteur ne lit que 3 passages, la page Résumés lit tout.
- */
-const SUMMARY_REQUEST =
-  /(?<!\p{L})r[ée]sum(?:e|é|er|ez|es)(?!\p{L})[^?.!]{0,30}?(?<!\p{L})(?:du|de ce|de cette|le|ce|cette|tout le|l'ensemble du)\s+(?:cours|chapitre|module|support)(?!\p{L})/iu;
-
-export function isCourseSummaryRequest(question: string): boolean {
-  return SUMMARY_REQUEST.test(question);
-}

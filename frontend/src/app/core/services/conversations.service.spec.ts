@@ -2,9 +2,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Conversation, Exchange, StoredMessage, toChatMessages } from '../models/conversation.models';
+import { Conversation, StoredMessage, toChatMessages } from '../models/conversation.models';
 import { AuthService, TOKEN_KEY } from './auth.service';
 import { ConversationsService } from './conversations.service';
 
@@ -89,37 +89,34 @@ describe('ConversationsService', () => {
     expect(service.messages()[0].question).toBe('Q');
   });
 
-  it('première question : crée la conversation puis enregistre l’échange', async () => {
-    const asked = firstValueFrom(service.ask('Qu’est-ce que le pooling ?', 'CNN'));
+  it('première demande : crée la conversation (avec le cours sélectionné) puis enregistre l’échange', async () => {
+    const request = vi.fn((conversationId: number) =>
+      of({
+        conversation: conversation(conversationId, '2026-10-14T10:01:00Z', 'Qu’est-ce que le pooling ?'),
+        messages: [message(20, 'user', 'Qu’est-ce que le pooling ?'), message(21, 'assistant', 'Il réduit [p.3].')],
+      }),
+    );
+    const asked = firstValueFrom(service.send('Qu’est-ce que le pooling ?', 'CNN', request));
     expect(service.asking()).toBe(true);
-    expect(service.messages()[0].status).toBe('pending');
+    expect(service.messages()[0]).toMatchObject({ status: 'pending', course: 'CNN' });
 
     const create = backend.expectOne(url);
     expect(create.request.method).toBe('POST');
     expect(create.request.body).toEqual({ course: 'CNN' });
     create.flush(conversation(5, '2026-10-14T10:00:00Z', 'Nouvelle conversation'));
-
-    const ask = backend.expectOne(`${url}/5/messages`);
-    expect(ask.request.body).toEqual({ question: 'Qu’est-ce que le pooling ?', course: 'CNN' });
-    const exchange: Exchange = {
-      conversation: conversation(5, '2026-10-14T10:01:00Z', 'Qu’est-ce que le pooling ?'),
-      user_message: message(20, 'user', 'Qu’est-ce que le pooling ?'),
-      assistant_message: message(21, 'assistant', 'Il réduit la taille [p.3].'),
-    };
-    ask.flush(exchange);
     await asked;
 
+    expect(request).toHaveBeenCalledWith(5, expect.any(Number));
     expect(service.activeId()).toBe(5);
     expect(service.asking()).toBe(false);
     expect(service.messages()).toEqual([expect.objectContaining({ id: 20, status: 'done' })]);
     expect(service.conversations()[0].title).toBe('Qu’est-ce que le pooling ?');
   });
 
-  it('marque la question en erreur si le LLM échoue', async () => {
+  it('marque la demande en erreur si l’agent échoue', async () => {
     service.select(5);
     backend.expectOne(`${url}/5/messages`).flush([]);
-    const asked = firstValueFrom(service.ask('Pooling ?', null));
-    backend.expectOne(`${url}/5/messages`).flush({ detail: 'LLM' }, { status: 503, statusText: 'Unavailable' });
+    const asked = firstValueFrom(service.send('Pooling ?', null, () => throwError(() => new Error('LLM'))));
     await expect(asked).rejects.toBeTruthy();
     expect(service.messages()[0].status).toBe('error');
   });

@@ -1,4 +1,4 @@
-import { formatPages, isCourseSummaryRequest, splitPageRefs } from './summary.utils';
+import { formatPages, splitPageRefs } from './summary.utils';
 
 describe('splitPageRefs', () => {
   it('sépare le texte et les références de pages', () => {
@@ -27,24 +27,5 @@ describe('formatPages', () => {
     expect(formatPages([3, 9])).toBe('p. 3, 9');
     expect(formatPages([7])).toBe('p. 7');
     expect(formatPages([])).toBe('');
-  });
-});
-
-describe('isCourseSummaryRequest', () => {
-  it.each([
-    'résume le cours',
-    'Résumé du cours stp',
-    'peux-tu me faire un résumé de ce chapitre ?',
-    'Resume tout le cours en quelques lignes',
-  ])('reconnaît « %s »', (question) => {
-    expect(isCourseSummaryRequest(question)).toBe(true);
-  });
-
-  it.each([
-    'Qu’est-ce qu’un connecteur ?',
-    'Résume la notion de pooling',
-    'Quelles sont les définitions importantes à retenir ?',
-  ])('ignore « %s »', (question) => {
-    expect(isCourseSummaryRequest(question)).toBe(false);
   });
 });

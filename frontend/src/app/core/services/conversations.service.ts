@@ -1,12 +1,21 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Observable, finalize, map, of, switchMap, tap } from 'rxjs';
 import { toMessage } from '../interceptors/error.interceptor';
-import { Conversation, toChatMessages } from '../models/conversation.models';
-import { ChatMessage } from '../models/tutor.models';
+import { Conversation, StoredMessage, toChatMessages } from '../models/conversation.models';
+import { AskResponse, ChatMessage } from '../models/tutor.models';
 import { AuthService } from './auth.service';
 import { ConversationsApiService } from './conversations-api.service';
 
 const ACTIVE_KEY = 'ai-study-assistant.conversation';
+
+/** Résultat d'une demande : la conversation mise à jour et les messages enregistrés (demande puis réponses). */
+export interface SavedExchange {
+  conversation: Conversation;
+  messages: StoredMessage[];
+}
+
+/** Envoie la demande dans la conversation conversationId ; pendingId identifie le message en attente. */
+export type ExchangeRequest = (conversationId: number, pendingId: number) => Observable<SavedExchange>;
 
 function readActiveId(): number | null {
   try {
@@ -30,7 +39,7 @@ function writeActiveId(id: number | null): void {
 }
 
 /**
- * Conversations du tuteur : liste, conversation ouverte et ses messages (rechargés depuis le backend).
+ * Conversations de l'Assistant : liste, conversation ouverte et ses messages (rechargés depuis le backend).
  * Les questions continuent si l'on change de page ; l'état est vidé quand l'étudiant change.
  */
 @Injectable({ providedIn: 'root' })
@@ -112,10 +121,10 @@ export class ConversationsService {
   }
 
   /**
-   * Pose une question dans la conversation ouverte (créée si besoin).
+   * Envoie une demande dans la conversation ouverte (créée si besoin) ; request obtient la réponse (l'agent).
    * Le message apparaît tout de suite en attente ; l'erreur éventuelle est aussi renvoyée à l'appelant.
    */
-  ask(question: string, course: string | null): Observable<void> {
+  send(question: string, course: string | null, request: ExchangeRequest): Observable<void> {
     const pendingId = this.nextPendingId--;
     this._messages.update((list) => [
       ...list,
@@ -142,12 +151,12 @@ export class ConversationsService {
     return conversationId$.pipe(
       switchMap((id) => {
         conversationId = id;
-        return this.api.ask(id, question, course);
+        return request(id, pendingId);
       }),
       tap((exchange) => {
         this.upsert(exchange.conversation);
         if (this._activeId() === exchange.conversation.id) {
-          const [message] = toChatMessages([exchange.user_message, exchange.assistant_message]);
+          const [message] = toChatMessages(exchange.messages);
           this.replaceMessage(pendingId, message);
         }
       }),
@@ -191,6 +200,18 @@ export class ConversationsService {
       [conversation, ...list.filter((c) => c.id !== conversation.id)].sort((a, b) =>
         b.updated_at.localeCompare(a.updated_at),
       ),
+    );
+  }
+
+  /** Met à jour une réponse affichée (score d'un quiz enregistré) sans recharger la conversation. */
+  updateResponse(messageId: number, payload: unknown): void {
+    const patch = (r: AskResponse): AskResponse => (r.messageId === messageId ? { ...r, payload } : r);
+    this._messages.update((list) =>
+      list.map((m) => ({
+        ...m,
+        response: m.response ? patch(m.response) : null,
+        ...(m.extra ? { extra: m.extra.map(patch) } : {}),
+      })),
     );
   }
 

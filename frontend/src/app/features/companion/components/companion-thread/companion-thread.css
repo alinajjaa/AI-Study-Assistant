@@ -2,7 +2,6 @@
   display: block;
 }
 
-/* ---------- État vide ---------- */
 .empty {
   padding: var(--space-8) var(--space-6);
   border: 1px solid var(--border);
@@ -17,48 +16,11 @@
 }
 
 .empty__text {
-  max-width: 34rem;
-  margin: 0 auto var(--space-5);
+  max-width: 36rem;
+  margin: 0 auto;
   color: var(--text-muted);
 }
 
-.suggestions {
-  list-style: none;
-  margin: var(--space-2) auto 0;
-  padding: 0;
-  max-width: 28rem;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.suggestion {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-  color: var(--text);
-  font: inherit;
-  font-size: var(--text-sm);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color var(--duration) var(--ease), background-color var(--duration) var(--ease);
-}
-
-.suggestion svg {
-  color: var(--accent);
-}
-
-.suggestion:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-/* ---------- Fil de discussion ---------- */
 .thread {
   list-style: none;
   margin: 0;
@@ -72,13 +34,13 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  scroll-margin-bottom: 9rem;
 }
 
 .student {
   align-self: flex-end;
   max-width: min(85%, 36rem);
   text-align: right;
+  scroll-margin-top: 6rem;
 }
 
 .meta {
@@ -102,7 +64,7 @@
   overflow-wrap: anywhere;
 }
 
-.tutor {
+.assistant {
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
@@ -120,39 +82,25 @@
   flex-shrink: 0;
 }
 
-.tutor__body {
+.assistant__body {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
-.thinking {
-  display: inline-flex;
+.working {
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border);
+  border: 1px dashed var(--border-strong);
   border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg);
   background: var(--surface);
 }
 
-@media (max-width: 480px) {
-  .avatar {
-    display: none;
-  }
-
-  .student {
-    max-width: 92%;
-  }
-}
-
-a.suggestion {
-  text-decoration: none;
-}
-
-.summary-hint {
+.working__hint {
   margin: var(--space-2) 0 0;
-  font-size: var(--text-sm);
 }
 
-.summary-hint a {
-  color: var(--accent);
-  font-weight: 600;
+.alert {
+  margin: 0;
 }

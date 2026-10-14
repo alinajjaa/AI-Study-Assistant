@@ -20,8 +20,8 @@ describe('validateRegistration', () => {
 describe('safeReturnUrl', () => {
   it('garde un chemin interne, refuse le reste', () => {
     expect(safeReturnUrl('/flashcards')).toBe('/flashcards');
-    expect(safeReturnUrl('//pirate.example')).toBe('/tutor');
-    expect(safeReturnUrl('https://pirate.example')).toBe('/tutor');
-    expect(safeReturnUrl(null)).toBe('/tutor');
+    expect(safeReturnUrl('//pirate.example')).toBe('/companion');
+    expect(safeReturnUrl('https://pirate.example')).toBe('/companion');
+    expect(safeReturnUrl(null)).toBe('/companion');
   });
 });

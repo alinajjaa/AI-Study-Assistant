@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'tutor' },
+  { path: '', pathMatch: 'full', redirectTo: 'companion' },
   {
     path: 'login',
     title: 'Connexion · AI Study Assistant',
@@ -16,11 +16,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/register.page').then((m) => m.RegisterPage),
   },
   {
-    path: 'tutor',
-    title: 'Tuteur de cours · AI Study Assistant',
+    path: 'companion',
+    title: 'Assistant · AI Study Assistant',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/tutor/tutor.page').then((m) => m.TutorPage),
+    loadComponent: () => import('./features/companion/companion.page').then((m) => m.CompanionPage),
   },
+  // Ancienne page « Tuteur de cours », fusionnée dans l'Assistant (anciens liens et favoris)
+  { path: 'tutor', redirectTo: 'companion' },
   {
     path: 'flashcards',
     title: 'Flashcards · AI Study Assistant',
@@ -46,5 +48,5 @@ export const routes: Routes = [
     loadComponent: () => import('./features/profile/profile.page').then((m) => m.ProfilePage),
   },
   // Futures fonctionnalités : ajouter leurs routes ici (avec canActivate: [authGuard]).
-  { path: '**', redirectTo: 'tutor' },
+  { path: '**', redirectTo: 'companion' },
 ];

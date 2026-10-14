@@ -156,13 +156,16 @@ export class FlashcardsPage {
           const wanted = this.route.snapshot.queryParamMap.get('course') ?? this.selectedCourse();
           const course = wanted !== null && courses.includes(wanted) ? wanted : (courses[0] ?? null);
           this.selectedCourse.set(course);
-          this.loadDecks(course);
+          // « Réviser » depuis le Study Companion : /flashcards?course=…&deck=… ouvre le paquet
+          const deck = Number(this.route.snapshot.queryParamMap.get('deck'));
+          this.loadDecks(course, Number.isInteger(deck) && deck > 0 ? deck : null);
         },
         error: (err: unknown) => this.toasts.show('error', 'Impossible de charger les cours', toMessage(err)),
       });
   }
 
-  private loadDecks(course: string | null): void {
+  /** openDeck : paquet à ouvrir directement en révision. */
+  private loadDecks(course: string | null, openDeck: number | null = null): void {
     this.decks.set([]);
     if (course === null) {
       return;
@@ -175,6 +178,10 @@ export class FlashcardsPage {
         next: (decks) => {
           if (this.selectedCourse() === course) {
             this.decks.set(decks);
+            const wanted = decks.find((d) => d.id === openDeck);
+            if (wanted) {
+              this.startReview(wanted);
+            }
           }
         },
         error: (err: unknown) => this.toasts.show('error', 'Impossible de charger tes paquets', toMessage(err)),

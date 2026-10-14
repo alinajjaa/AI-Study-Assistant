@@ -1,4 +1,4 @@
-import { ChatMessage, Source } from './tutor.models';
+import { AskResponse, ChatMessage, MessageKind, Source } from './tutor.models';
 
 export interface Conversation {
   id: number;
@@ -18,19 +18,29 @@ export interface StoredMessage {
   sources: Source[];
   /** false si l'information n'est pas dans le cours. */
   answered: boolean;
+  /** Absent avec un ancien backend : text (question) ou answer (réponse du tuteur). */
+  kind?: MessageKind;
+  payload?: unknown;
   created_at: string;
-}
-
-/** Réponse de POST /api/conversations/{id}/messages. */
-export interface Exchange {
-  conversation: Conversation;
-  user_message: StoredMessage;
-  assistant_message: StoredMessage;
 }
 
 export const DEFAULT_CONVERSATION_TITLE = 'Nouvelle conversation';
 
-/** Messages du backend (question, réponse, question…) → échanges affichés par le fil de discussion. */
+function toResponse(message: StoredMessage): AskResponse {
+  return {
+    answer: message.content,
+    sources: message.sources,
+    kind: message.kind ?? 'answer',
+    payload: message.payload ?? null,
+    messageId: message.id,
+    answered: message.answered,
+  };
+}
+
+/**
+ * Messages du backend (question, réponse(s), question…) → échanges affichés par le fil de discussion.
+ * Le Study Companion peut enregistrer plusieurs réponses pour une demande (une par outil) : elles vont dans extra.
+ */
 export function toChatMessages(messages: readonly StoredMessage[]): ChatMessage[] {
   const result: ChatMessage[] = [];
   for (const message of messages) {
@@ -49,7 +59,9 @@ export function toChatMessages(messages: readonly StoredMessage[]): ChatMessage[
     if (last && last.response === null) {
       last.status = 'done';
       last.error = null;
-      last.response = { answer: message.content, sources: message.sources };
+      last.response = toResponse(message);
+    } else if (last) {
+      last.extra = [...(last.extra ?? []), toResponse(message)];
     }
   }
   return result;

@@ -10,28 +10,43 @@
       <span class="brand__name">AI Study Assistant</span>
     </a>
     @if (auth.isAuthenticated()) {
-      <nav aria-label="Navigation principale">
-        <a routerLink="/tutor" routerLinkActive="nav-link--active" ariaCurrentWhenActive="page" class="nav-link">
-          Tuteur de cours
-        </a>
-        <a routerLink="/flashcards" routerLinkActive="nav-link--active" ariaCurrentWhenActive="page" class="nav-link">
-          Flashcards
-        </a>
-        <a routerLink="/summaries" routerLinkActive="nav-link--active" ariaCurrentWhenActive="page" class="nav-link">
-          Résumés
-        </a>
-        <a routerLink="/exams" routerLinkActive="nav-link--active" ariaCurrentWhenActive="page" class="nav-link">
-          Mes examens
-        </a>
-        <a routerLink="/profile" routerLinkActive="nav-link--active" ariaCurrentWhenActive="page" class="nav-link">
-          Mon profil
-        </a>
-      </nav>
-      <div class="account">
-        @if (auth.user(); as user) {
-          <span class="account__email" [title]="user.email">{{ user.email }}</span>
-        }
-        <button type="button" class="btn btn--ghost btn--sm" (click)="logout()">Déconnexion</button>
+      <!-- Sous 1280 px : menu compact, ouvert par ce bouton -->
+      <button
+        type="button"
+        class="btn btn--ghost btn--sm menu-toggle"
+        aria-controls="main-menu"
+        [attr.aria-expanded]="menuOpen()"
+        (click)="toggleMenu()"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+          @if (menuOpen()) {
+            <path d="M6 6l12 12M18 6 6 18" />
+          } @else {
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          }
+        </svg>
+        Menu
+      </button>
+      <div id="main-menu" class="menu" [class.menu--open]="menuOpen()">
+        <nav aria-label="Navigation principale">
+          @for (link of links; track link.path) {
+            <a
+              [routerLink]="link.path"
+              routerLinkActive="nav-link--active"
+              ariaCurrentWhenActive="page"
+              class="nav-link"
+              (click)="closeMenu()"
+            >
+              {{ link.label }}
+            </a>
+          }
+        </nav>
+        <div class="account">
+          @if (auth.user(); as user) {
+            <span class="account__email" [title]="user.email">{{ user.email }}</span>
+          }
+          <button type="button" class="btn btn--ghost btn--sm" (click)="logout()">Déconnexion</button>
+        </div>
       </div>
     }
   </div>

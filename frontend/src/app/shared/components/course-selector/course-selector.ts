@@ -2,7 +2,7 @@ import { Component, input, output } from '@angular/core';
 import { formatElapsed } from '../../../core/utils/exam.utils';
 import { Loader } from '../loader/loader';
 
-/** Liste « Mes cours », partagée par le tuteur et les flashcards. */
+/** Liste « Mes cours », partagée par l'Assistant, les flashcards et les résumés. */
 @Component({
   selector: 'app-course-selector',
   imports: [Loader],
@@ -23,6 +23,10 @@ export class CourseSelector {
   readonly jobs = input<ReadonlyMap<string, number>>(new Map());
   /** Libellé du badge de génération, suivi du chronomètre. */
   readonly jobLabel = input('Examen en cours…');
+  /** Libellé par cours, prioritaire sur jobLabel (« Examen + Flashcards en cours… »). */
+  readonly jobLabels = input<ReadonlyMap<string, string>>(new Map());
+  /** Examens en cours, si jobs contient aussi d'autres générations (null = jobs). */
+  readonly examJobs = input<ReadonlyMap<string, number> | null>(null);
   /** Heure courante (ms), pour le chronomètre. */
   readonly now = input(0);
 
@@ -34,6 +38,15 @@ export class CourseSelector {
   protected elapsed(course: string): string | null {
     const startedAt = this.jobs().get(course);
     return startedAt === undefined ? null : formatElapsed((this.now() - startedAt) / 1000);
+  }
+
+  protected label(course: string): string {
+    return this.jobLabels().get(course) ?? this.jobLabel();
+  }
+
+  /** Un examen est déjà en cours pour ce cours : le bouton « Générer un examen » est désactivé. */
+  protected examRunning(course: string): boolean {
+    return (this.examJobs() ?? this.jobs()).has(course);
   }
 
   protected select(course: string | null): void {

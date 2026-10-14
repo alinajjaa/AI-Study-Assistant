@@ -6,7 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 
 /** Page à rouvrir après connexion : uniquement un chemin interne. */
 export function safeReturnUrl(value: string | null): string {
-  return value && value.startsWith('/') && !value.startsWith('//') ? value : '/tutor';
+  return value && value.startsWith('/') && !value.startsWith('//') ? value : '/companion';
 }
 
 @Component({

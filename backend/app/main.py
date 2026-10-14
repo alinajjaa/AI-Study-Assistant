@@ -17,6 +17,7 @@ from app.phase8_personal.flashcard_history import router as flashcard_history_ro
 from app.phase8_personal.profile import router as profile_router
 from app.phase5_evaluation.routes import router as stats_router
 from app.phase9_summaries.routes import router as summaries_router
+from app.phase6_agent.routes import router as companion_router
 from fastapi.exceptions import RequestValidationError
 from fastapi.encoders import jsonable_encoder
 @asynccontextmanager
@@ -46,6 +47,7 @@ app.include_router(flashcard_history_router)
 app.include_router(profile_router)
 app.include_router(stats_router)
 app.include_router(summaries_router)
+app.include_router(companion_router)
 @app.exception_handler(LLMError)
 async def llm_error_handler(request: Request, exc: LLMError):
     """Toute erreur du LLM devient une réponse 503 avec un message clair pour le frontend."""

@@ -95,6 +95,8 @@ class MessageOut(BaseModel):
     course: str | None
     sources: list
     answered: bool
+    kind: str = "text"  # text | answer | quiz | summary | flashcards | progress
+    payload: dict | None = None  # données de l'affichage riche (Study Companion)
     created_at: datetime
 
 

@@ -1,18 +1,26 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
 import { TOKEN_KEY } from './core/services/auth.service';
 
-async function createApp(): Promise<HTMLElement> {
+@Component({ template: '' })
+class Blank {}
+
+async function render() {
   await TestBed.configureTestingModule({
     imports: [App],
-    providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    providers: [provideRouter([{ path: '**', component: Blank }]), provideHttpClient(), provideHttpClientTesting()],
   }).compileComponents();
   const fixture = TestBed.createComponent(App);
   await fixture.whenStable();
-  return fixture.nativeElement as HTMLElement;
+  return { fixture, el: fixture.nativeElement as HTMLElement };
+}
+
+async function createApp(): Promise<HTMLElement> {
+  return (await render()).el;
 }
 
 describe('App', () => {
@@ -35,5 +43,42 @@ describe('App', () => {
     const compiled = await createApp();
     expect(compiled.querySelector('nav')).not.toBeNull();
     expect(compiled.textContent).toContain('Déconnexion');
+  });
+
+  it('menu : Assistant · Flashcards · Résumés · Mes examens · Mon profil (plus de « Tuteur de cours »)', async () => {
+    localStorage.setItem(TOKEN_KEY, 'jeton');
+    const compiled = await createApp();
+    const links = [...compiled.querySelectorAll<HTMLAnchorElement>('nav a')];
+    expect(links.map((a) => a.textContent?.trim())).toEqual(['Assistant', 'Flashcards', 'Résumés', 'Mes examens', 'Mon profil']);
+    expect(links[0].getAttribute('href')).toBe('/companion');
+    expect(compiled.textContent).not.toContain('Tuteur');
+    expect(compiled.querySelector('a[href="/tutor"]')).toBeNull();
+  });
+
+  it('menu compact : le bouton Menu ouvre et ferme le panneau (Échap et clic sur un lien le ferment)', async () => {
+    localStorage.setItem(TOKEN_KEY, 'jeton');
+    const { fixture, el } = await render();
+    const toggle = el.querySelector<HTMLButtonElement>('.menu-toggle')!;
+    const menu = el.querySelector('#main-menu')!;
+    expect(toggle.getAttribute('aria-controls')).toBe('main-menu');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    // Le menu contient la navigation, l'email et la Déconnexion (une seule ligne à partir de 1280 px)
+    expect(menu.querySelector('nav')).not.toBeNull();
+    expect(menu.textContent).toContain('Déconnexion');
+
+    toggle.click();
+    await fixture.whenStable();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(menu.classList).toContain('menu--open');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await fixture.whenStable();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+
+    toggle.click();
+    await fixture.whenStable();
+    menu.querySelector<HTMLAnchorElement>('nav a')!.click();
+    await fixture.whenStable();
+    expect(menu.classList).not.toContain('menu--open');
   });
 });

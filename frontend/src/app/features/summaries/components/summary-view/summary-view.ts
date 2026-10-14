@@ -2,6 +2,8 @@ import { Component, computed, input, output } from '@angular/core';
 import { Summary } from '../../../../core/models/summary.models';
 import { BulletPart, formatPages, splitPageRefs } from '../../../../core/utils/summary.utils';
 
+let nextId = 0;
+
 const DATE_FORMAT = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 
 /** Un résumé : vue d'ensemble, puis sections repliables avec leurs références de pages. */
@@ -14,7 +16,12 @@ export class SummaryView {
   readonly summary = input.required<Summary>();
   /** Une régénération est en cours pour ce cours (bouton désactivé). */
   readonly regenerating = input(false);
+  /** Bouton « Régénérer » (masqué dans le Study Companion, qui affiche un résumé déjà enregistré). */
+  readonly showRegenerate = input(true);
   readonly regenerate = output<void>();
+
+  /** Identifiant unique : plusieurs résumés peuvent être affichés dans la même page. */
+  protected readonly titleId = `summary-title-${nextId++}`;
 
   protected readonly title = computed(() => {
     const s = this.summary();

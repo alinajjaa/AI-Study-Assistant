@@ -12,6 +12,6 @@ export const authGuard: CanActivateFn = (_route, state) => {
   return inject(Router).createUrlTree(['/login'], { queryParams });
 };
 
-/** /login et /register : un étudiant déjà connecté va directement au tuteur. */
+/** /login et /register : un étudiant déjà connecté va directement à l'Assistant (page d'accueil). */
 export const guestGuard: CanActivateFn = () =>
-  inject(AuthService).isAuthenticated() ? inject(Router).createUrlTree(['/tutor']) : true;
+  inject(AuthService).isAuthenticated() ? inject(Router).createUrlTree(['/companion']) : true;

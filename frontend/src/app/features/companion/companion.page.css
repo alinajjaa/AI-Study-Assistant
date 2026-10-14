@@ -1,0 +1,177 @@
+:host {
+  display: block;
+}
+
+.page-header {
+  margin-bottom: var(--space-6);
+}
+
+.page-header h1 {
+  font-size: var(--text-2xl);
+}
+
+.lede {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border: 1px solid var(--danger);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.banner__text {
+  flex: 1;
+  margin: 0;
+  font-weight: 500;
+}
+
+.banner__close {
+  color: inherit;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.sidebar {
+  position: sticky;
+  top: 5rem;
+  max-height: calc(100dvh - 6rem);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.course-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.course-picker .label {
+  margin: 0;
+}
+
+.course-select {
+  width: auto;
+  min-width: 12rem;
+  max-width: 22rem;
+}
+
+.loading-messages {
+  display: grid;
+  place-items: center;
+  min-height: 10rem;
+}
+
+/* Espace sous le dernier échange : la dernière réponse reste entièrement visible au-dessus de la saisie */
+.thread {
+  padding-bottom: var(--space-6);
+}
+
+/*
+ * Zone de saisie fixée en bas : boutons rapides et champ dans un même bloc opaque.
+ * Collée (sticky) et non superposée : elle garde sa place dans le flux, les messages défilent derrière
+ * sans jamais être recouverts par des boutons transparents.
+ */
+.composer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: calc(-1 * var(--space-2));
+  padding: var(--space-3) 0 var(--space-4);
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.quick-actions {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+}
+
+.quick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--duration) var(--ease), background-color var(--duration) var(--ease);
+}
+
+.quick svg {
+  color: var(--accent);
+}
+
+.quick:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.quick:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .course-select {
+    min-width: 0;
+    max-width: 100%;
+  }
+}

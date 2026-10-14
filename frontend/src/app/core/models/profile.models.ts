@@ -26,11 +26,20 @@ export interface LevelSuggestion {
   known_rate: number;
 }
 
+/** Réponses aux quiz du Study Companion. */
+export interface ProfileQuizStats {
+  answers: number;
+  /** Entre 0 et 1, null sans réponse. */
+  correct_rate: number | null;
+}
+
 /** Réponse de GET /api/profile. */
 export interface Profile {
   email: string;
   level: Level;
   stats: ProfileStats;
+  /** Absent avec un backend antérieur au Study Companion. */
+  quiz?: ProfileQuizStats;
   weak_points: WeakPoint[];
   level_suggestion: LevelSuggestion | null;
 }

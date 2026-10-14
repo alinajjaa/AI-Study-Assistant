@@ -54,4 +54,20 @@ describe('AnswerCard', () => {
     expect(el.querySelector('.answer--off')).not.toBeNull();
     expect(el.querySelector('.badge')).toBeNull();
   });
+
+  it('bug c : NOT_FOUND « Hors du cours » — ni texte supplémentaire, ni sources, même si le modèle en a ajouté', async () => {
+    const { el } = await render({
+      answer: 'Cette information n’est pas présente dans le cours. Mais en général, **Kubernetes** orchestre [p.4].',
+      sources: [{ course: 'Docker', page: 4, score: 0.4, excerpt: 'Extrait' }],
+      kind: 'answer',
+      answered: false,
+    });
+    expect(el.querySelector('.tag--off')?.textContent).toContain('Hors du cours');
+    expect(el.querySelector('.off-note')?.textContent).toBe('Cette information ne figure pas dans le cours interrogé.');
+    expect(el.querySelector('.markdown')).toBeNull();
+    expect(el.querySelector('app-sources-list')).toBeNull();
+    expect(el.querySelector('.page-ref')).toBeNull();
+    expect(el.textContent).not.toContain('Kubernetes');
+    expect(el.querySelector('.copy')).toBeNull();
+  });
 });

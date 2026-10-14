@@ -58,7 +58,13 @@ class Message(SQLModel, table=True):
     course: str | None = None  # cours interrogé pour cette question (None = tous les cours)
     sources: list = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
     answered: bool = True  # False si la réponse n'est pas dans le cours
+    # Affichage riche (Study Companion) : text | answer | quiz | summary | flashcards | progress
+    kind: str = Field(default="text")
+    payload: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
     created_at: datetime = Field(default_factory=utcnow)
+
+
+MESSAGE_KINDS = ("text", "answer", "quiz", "summary", "flashcards", "progress")
 
 
 class ExamRecord(SQLModel, table=True):

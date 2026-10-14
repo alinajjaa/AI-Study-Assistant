@@ -76,6 +76,16 @@
           <dt>Cartes sues</dt>
           <dd>{{ p.stats.known_rate === null ? '—' : percent(p.stats.known_rate) }}</dd>
         </div>
+        @if (p.quiz; as quiz) {
+          <div class="stat">
+            <dt>Réponses de quiz</dt>
+            <dd>{{ quiz.answers }}</dd>
+          </div>
+          <div class="stat">
+            <dt>Quiz réussis</dt>
+            <dd>{{ quiz.correct_rate === null ? '—' : percent(quiz.correct_rate) }}</dd>
+          </div>
+        }
       </dl>
     </section>
   </div>
@@ -85,10 +95,11 @@
     @if (p.weak_points.length === 0) {
       <p class="hint">
         Aucun point faible pour l'instant. Ils apparaissent quand tu marques une notion « À revoir »
-        au moins deux fois dans les <a routerLink="/flashcards">flashcards</a>.
+        au moins deux fois dans les <a routerLink="/flashcards">flashcards</a>, ou quand tu la manques
+        dans les quiz de l'<a routerLink="/companion">Assistant</a>.
       </p>
     } @else {
-      <p class="hint">Les notions que tu marques le plus souvent « À revoir ». Le tuteur te les signale aussi.</p>
+      <p class="hint">Les notions que tu marques le plus souvent « À revoir » ou que tu manques dans les quiz. Le tuteur te les signale aussi.</p>
       <ul class="weak-list">
         @for (point of p.weak_points; track point.course + point.concept) {
           <li class="weak">

@@ -1,0 +1,81 @@
+<article class="quiz" [attr.aria-label]="'Quiz sur ' + quiz().course">
+  <header class="quiz__header">
+    <div>
+      <h3 class="quiz__title">Quiz · {{ quiz().course }}</h3>
+      <p class="hint">{{ total() }} questions · niveau {{ difficulty() }}</p>
+    </div>
+    <span class="quiz__count" [attr.aria-label]="answered() + ' questions répondues sur ' + total()">
+      {{ answered() }}/{{ total() }}
+    </span>
+  </header>
+
+  <ol class="questions">
+    @for (question of quiz().questions; track $index; let i = $index) {
+      @if (i < visible()) {
+        <li class="question">
+          <fieldset class="question__set">
+            <legend class="question__text">
+              <span class="question__number">Question {{ i + 1 }}</span>
+              {{ question.question }}
+            </legend>
+            <div class="choices">
+              @for (choice of question.choices; track $index; let c = $index) {
+                <button
+                  type="button"
+                  class="choice"
+                  [id]="choiceId(i, c)"
+                  [class.choice--correct]="choiceState(i, letters[c]) === 'correct'"
+                  [class.choice--wrong]="choiceState(i, letters[c]) === 'wrong'"
+                  [class.choice--picked]="answers()[i] === letters[c]"
+                  [attr.aria-pressed]="answers()[i] === letters[c]"
+                  [disabled]="answers()[i] !== null || saved()"
+                  (click)="choose(i, letters[c])"
+                >
+                  <span class="choice__letter" aria-hidden="true">{{ letters[c] }}</span>
+                  <span class="choice__text">{{ choice }}</span>
+                  @if (choiceState(i, letters[c]) === 'correct') {
+                    <span class="sr-only">(bonne réponse)</span>
+                  } @else if (choiceState(i, letters[c]) === 'wrong') {
+                    <span class="sr-only">(ta réponse, incorrecte)</span>
+                  }
+                </button>
+              }
+            </div>
+          </fieldset>
+
+          @if (answers()[i]; as picked) {
+            <div class="feedback" [class.feedback--ok]="picked === question.answer" role="status">
+              <p class="feedback__verdict">
+                @if (picked === question.answer) {
+                  Bonne réponse !
+                } @else {
+                  Pas tout à fait : la bonne réponse était {{ question.answer }}.
+                }
+              </p>
+              <p class="feedback__explanation">
+                {{ question.explanation }}
+                <span class="page-ref" [title]="'Page ' + question.page + ' du cours'">p.{{ question.page }}</span>
+              </p>
+            </div>
+          }
+        </li>
+      }
+    }
+  </ol>
+
+  @if (finished()) {
+    <footer class="score" role="status">
+      <p class="score__value">
+        Score : <strong>{{ score() }}/{{ total() }}</strong>
+      </p>
+      @if (saving()) {
+        <app-loader size="sm" label="Enregistrement du score…" />
+      } @else if (saveError(); as message) {
+        <p class="alert alert--error">Score non enregistré : {{ message }}</p>
+        <button type="button" class="btn btn--sm" (click)="submit()">Réessayer</button>
+      } @else if (saved()) {
+        <p class="hint">Score enregistré : les notions manquées rejoignent tes points faibles dans ton profil.</p>
+      }
+    </footer>
+  }
+</article>

@@ -25,6 +25,11 @@ export class QuestionInput {
   readonly course = input<string | null>(null);
   /** Texte saisi ; en model() pour que la page puisse le pré-remplir (suggestions). */
   readonly text = model('');
+  /** Libellé (lu par les lecteurs d'écran) et texte indicatif du champ. */
+  readonly label = input('Ta question');
+  readonly placeholder = input('Pose ta question sur le cours…');
+  /** Indication quand aucun cours n'est choisi (l'assistant cherche alors dans tous les cours). */
+  readonly noCourseLabel = input('tous les cours');
 
   readonly ask = output<string>();
 

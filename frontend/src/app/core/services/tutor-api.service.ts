@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AskResponse, DeleteResponse, UploadResponse } from '../models/tutor.models';
+import { DeleteResponse, UploadResponse } from '../models/tutor.models';
 
 @Injectable({ providedIn: 'root' })
 export class TutorApiService {
@@ -24,10 +24,5 @@ export class TutorApiService {
 
   deleteCourse(course: string): Observable<DeleteResponse> {
     return this.http.delete<DeleteResponse>(`${this.apiUrl}/courses/${encodeURIComponent(course)}`);
-  }
-
-  /** Pas de timeout : le LLM local peut mettre jusqu'à une minute. */
-  ask(question: string, course: string | null): Observable<AskResponse> {
-    return this.http.post<AskResponse>(`${this.apiUrl}/ask`, { question, course });
   }
 }
