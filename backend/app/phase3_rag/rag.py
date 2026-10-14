@@ -7,6 +7,7 @@ from app.core.privacy import mask_pii
 from app.phase1_llm.llm import chat
 from app.phase2_embeddings.embeddings import embed_query
 from app.phase2_embeddings.vectorstore import search
+from app.phase5_evaluation.stats import GenerationStats, collecting, record_value
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -149,22 +150,36 @@ def build_user_prompt(hits: list[dict], question: str, history: list[dict] | Non
 
 def answer(question: str, course: str | None = None, k: int = TOP_K, *, user_id: int | None,
            history: list[dict] | None = None, level: str | None = None,
-           weak_concepts: list[str] | None = None) -> dict:
+           weak_concepts: list[str] | None = None, stats: GenerationStats | None = None) -> dict:
     """Question → chunks pertinents (Qdrant, cours de l'étudiant uniquement) → LLM → réponse + sources.
 
     history : échanges précédents de la conversation [{"role": "user"|"assistant", "content": "..."}].
     level : niveau de l'étudiant (debutant, intermediaire, avance) pour adapter l'explication.
     weak_concepts : ses points faibles ; ceux dont parle la question sont signalés par le tuteur.
+    stats (optionnel, phase 5) : durée, passages retrouvés, score maximal, réponse trouvée, sources.
     """
+    with collecting(stats):
+        result = _answer(question, course, k, user_id=user_id, history=history, level=level,
+                         weak_concepts=weak_concepts)
+        record_value("reponse_trouvee", 1 if result["answered"] else 0)
+        record_value("sources", len(result["sources"]))
+        return result
+
+
+def _answer(question: str, course: str | None, k: int, *, user_id: int | None, history: list[dict] | None,
+            level: str | None, weak_concepts: list[str] | None) -> dict:
     history = (history or [])[-2 * HISTORY_TURNS:]
     query = search_query(question, history)
     hits = search(embed_query(query), k, course, user_id=user_id)
+    record_value("passages_retrouves", 0)
     if not hits:
         return {"answer": "Aucun cours n'est indexé pour répondre à cette question.", "sources": [],
                 "answered": False}
 
     # Ne garder que les extraits proches du meilleur score (élimine le bruit)
     hits = [h for h in hits if h["score"] >= hits[0]["score"] - SCORE_MARGIN]
+    record_value("passages_retrouves", len(hits))
+    record_value("score_max", round(hits[0]["score"], 4))
 
     # Aucune donnée personnelle brute n'est envoyée au LLM (exigence du cahier des charges)
     user_prompt = build_user_prompt(hits, question, history)

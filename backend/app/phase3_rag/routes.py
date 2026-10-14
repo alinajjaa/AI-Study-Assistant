@@ -6,6 +6,7 @@ from app.core.db import get_session
 from app.phase2_embeddings.ingest import ingest_pdf
 from app.phase2_embeddings.vectorstore import delete_course
 from app.phase3_rag.rag import answer
+from app.phase5_evaluation.tracking import track_tutor
 from app.phase8_personal.courses import add_course, list_user_courses, require_course
 from app.phase8_personal.deps import get_current_user
 from app.phase8_personal.models import User
@@ -62,4 +63,6 @@ def ask(body: AskRequest, user: User = Depends(get_current_user), session: Sessi
     if body.course:
         require_course(session, user.id, body.course)
     weak = [p.concept for p in weak_points(session, user.id, body.course or None)]
-    return answer(body.question, body.course, user_id=user.id, level=user.level, weak_concepts=weak)
+    with track_tutor(course=body.course, level=user.level) as stats:
+        return answer(body.question, body.course, user_id=user.id, level=user.level, weak_concepts=weak,
+                      stats=stats)

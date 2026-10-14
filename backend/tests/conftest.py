@@ -9,6 +9,8 @@ _TMP = Path(tempfile.mkdtemp(prefix="study-tests-"))
 os.environ["DATABASE_URL"] = f"sqlite:///{(_TMP / 'test.db').as_posix()}"
 os.environ["JWT_SECRET"] = "secret-de-test-uniquement-0123456789abcdef"
 os.environ["STORAGE_DIR"] = str(_TMP / "storage")
+os.environ["MLFLOW_ENABLED"] = "false"  # activé seulement dans les tests MLflow
+os.environ["MLFLOW_TRACKING_URI"] = f"sqlite:///{(_TMP / 'mlruns' / 'mlflow.db').as_posix()}"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

@@ -3,6 +3,7 @@ from openai import (
     AuthenticationError, RateLimitError, APIStatusError,
 )
 from app.core.config import LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, LLM_TIMEOUT
+from app.phase5_evaluation.stats import record
 
 
 class LLMError(Exception):
@@ -43,7 +44,7 @@ def chat(
     else:
         extra = {}
 
-        
+    record("appels_llm")  # mesure (phase 5) : sans collecteur actif, aucun effet
     try:
         out = client.chat.completions.create(
             model=LLM_MODEL,

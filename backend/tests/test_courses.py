@@ -69,11 +69,11 @@ def test_examen_et_flashcards_recoivent_user_id(client, monkeypatch):
 
     calls = {}
 
-    def fake_exam(course, fmt, num, difficulty, user_id=None):
+    def fake_exam(course, fmt, num, difficulty, user_id=None, stats=None):
         calls["exam"] = user_id
         return sample_exam(course)
 
-    def fake_flashcards(course, count, user_id=None):
+    def fake_flashcards(course, count, user_id=None, stats=None):
         calls["flashcards"] = user_id
         return sample_deck(course)
 

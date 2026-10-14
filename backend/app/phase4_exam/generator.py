@@ -15,6 +15,7 @@ from app.phase4_exam.schemas import (
     BoolAnswers, Difficulty, Exam, ExamFormat, ExamSection, LetterAnswers, MCQBatch, MCQQuestion,
     OpenBatch, OpenQuestion, ShortAnswerBatch, ShortAnswerQuestion, TrueFalseBatch, TrueFalseQuestion,
 )
+from app.phase5_evaluation.stats import GenerationStats, collecting, record, record_value, reject
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -179,6 +180,7 @@ def parse_items(kind: str, raw: str, allowed_pages: list[int]) -> list[BaseModel
         data = json.loads(raw)
     except json.JSONDecodeError:
         logger.warning("Réponse du LLM qui n'est pas du JSON valide, lot ignoré")
+        reject("validation", kind)
         return []
 
     items = data.get("items", []) if isinstance(data, dict) else []
@@ -191,6 +193,7 @@ def parse_items(kind: str, raw: str, allowed_pages: list[int]) -> list[BaseModel
             question = TYPE_SPECS[kind].item_model.model_validate(item)
         except ValidationError as e:
             logger.info("Question %s rejetée : %s", kind, e.errors()[0]["msg"])
+            reject("validation", kind)
             continue
         # Si le modèle se trompe de page, on prend la page la plus proche parmi celles fournies
         if question.page not in allowed_pages:
@@ -221,6 +224,7 @@ def verify_mcq(questions: list[MCQQuestion], context: list[dict]) -> list[MCQQue
         answers = LetterAnswers.model_validate_json(raw).answers
     except (LLMError, ValidationError) as e:
         logger.warning("Vérification QCM impossible, questions gardées sans contrôle : %s", e)
+        record("verifications_impossibles")
         return questions
     return _keep_matching(questions, answers, [q.answer for q in questions])
 
@@ -239,6 +243,7 @@ def verify_true_false(questions: list[TrueFalseQuestion], context: list[dict]) -
         answers = BoolAnswers.model_validate_json(raw).answers
     except (LLMError, ValidationError) as e:
         logger.warning("Vérification Vrai/Faux impossible, affirmations gardées sans contrôle : %s", e)
+        record("verifications_impossibles")
         return questions
     return _keep_matching(questions, answers, [q.answer for q in questions])
 
@@ -248,6 +253,7 @@ def _keep_matching(questions: list, given: list, expected: list) -> list:
     if len(given) != len(questions):
         logger.warning("Vérification incomplète (%d réponses pour %d questions), lot gardé",
                        len(given), len(questions))
+        record("verifications_impossibles")
         return questions
     kept = []
     for question, got, want in zip(questions, given, expected):
@@ -256,6 +262,7 @@ def _keep_matching(questions: list, given: list, expected: list) -> list:
         else:
             logger.info("Question écartée (corrigé %s, vérification %s) : %s",
                         want, got, question_text(question)[:70])
+            reject("verification", question.type)
     return kept
 
 
@@ -276,9 +283,11 @@ def verify_written(question: ShortAnswerQuestion | OpenQuestion, context: list[d
         verdict = BoolAnswers.model_validate_json(raw).answers[0]
     except (LLMError, ValidationError) as e:
         logger.warning("Vérification impossible, question gardée sans contrôle : %s", e)
+        record("verifications_impossibles")
         return True
     if not verdict:
         logger.info("Question écartée (réponse attendue jugée incorrecte) : %s", question.question[:70])
+        reject("verification", question.type)
     return verdict
 
 
@@ -326,6 +335,7 @@ def generate_section(plan: SectionPlan, chunks: list[dict], difficulty: Difficul
     questions: list = []
     last_error: LLMError | None = None
     calls = 0
+    record(f"demandees_{plan.kind}", plan.count)
 
     for index in order * 2:  # deux passages sur le cours au maximum
         if len(questions) >= plan.count or calls >= budget:
@@ -338,6 +348,7 @@ def generate_section(plan: SectionPlan, chunks: list[dict], difficulty: Difficul
         threshold = SIMILARITY_THRESHOLD if calls < budget * 2 / 3 else CATCH_UP_SIMILARITY
         prompt = build_prompt(plan.kind, context, difficulty, asked, want_true)
         calls += 1
+        record("appels_generation")
 
         try:
             raw = chat(SYSTEM_PROMPT, prompt, max_tokens=spec.max_tokens, temperature=0.5,
@@ -345,6 +356,7 @@ def generate_section(plan: SectionPlan, chunks: list[dict], difficulty: Difficul
         except LLMError as e:
             # Un appel raté (boucle du modèle, réponse vide…) ne doit pas faire échouer tout l'examen
             logger.warning("Appel %s ignoré : %s", plan.kind, e)
+            record("erreurs_llm")
             last_error = e
             continue
 
@@ -355,6 +367,7 @@ def generate_section(plan: SectionPlan, chunks: list[dict], difficulty: Difficul
         vector = embed_passages([question_text(question)])[0]
         if is_duplicate(vector, seen_vectors, threshold):
             logger.info("Question écartée (doublon de sens) : %s", question_text(question)[:70])
+            reject("doublon", plan.kind)
             continue
 
         seen_vectors.append(vector)
@@ -369,13 +382,24 @@ def generate_section(plan: SectionPlan, chunks: list[dict], difficulty: Difficul
 
 
 def generate_exam(course: str, fmt: ExamFormat = "complet", num_questions: int = 20,
-                  difficulty: Difficulty = "moyen", user_id: int | None = None) -> Exam:
-    """Génère un examen noté sur 20, réparti sur l'ensemble du cours (de l'étudiant user_id)."""
+                  difficulty: Difficulty = "moyen", user_id: int | None = None,
+                  stats: GenerationStats | None = None) -> Exam:
+    """Génère un examen noté sur 20, réparti sur l'ensemble du cours (de l'étudiant user_id).
+
+    stats (optionnel, phase 5) : collecteur rempli pendant la génération (appels, rejets, durée).
+    """
+    with collecting(stats):
+        return _generate_exam(course, fmt, num_questions, difficulty, user_id)
+
+
+def _generate_exam(course: str, fmt: ExamFormat, num_questions: int, difficulty: Difficulty,
+                   user_id: int | None) -> Exam:
     chunks = get_course_chunks(course, user_id)
     if not chunks:
         raise LookupError(f"Le cours « {course} » est introuvable ou vide.")
     # Les slides très courtes (titres, schémas) donnent des questions ambiguës, voire un corrigé faux
     chunks = [c for c in chunks if len(c["text"]) >= EXAM_MIN_CHUNK_CHARS] or chunks
+    record_value("passages", len(chunks))
 
     plans = plan_exam(fmt, num_questions)
     rng = random.Random()

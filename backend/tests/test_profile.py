@@ -31,7 +31,7 @@ def test_statistiques(client, llm, monkeypatch, session):
     from app.phase7_flashcards import routes as flashcard_routes
 
     monkeypatch.setattr(exam_routes, "generate_exam", lambda course, *a, **k: sample_exam(course))
-    monkeypatch.setattr(flashcard_routes, "generate_flashcards", lambda course, count, user_id=None: sample_deck(course))
+    monkeypatch.setattr(flashcard_routes, "generate_flashcards", lambda course, count, user_id=None, stats=None: sample_deck(course))
     headers = register(client)
     upload(client, headers, "CNN")
     upload(client, headers, "RNN")

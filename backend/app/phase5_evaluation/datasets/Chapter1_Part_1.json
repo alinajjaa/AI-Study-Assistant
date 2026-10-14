@@ -1,0 +1,17 @@
+[
+  {"question": "Quels exemples de systèmes embarqués le cours cite-t-il ?", "expected_page": 7},
+  {"question": "Qu'est-ce qu'un système d'information et à quoi sert-il ?", "expected_page": 8},
+  {"question": "Sur quels appareils fonctionne un système mobile ?", "expected_page": 9},
+  {"question": "Quelle définition de l'architecture logicielle donne la norme ISO/IEC/IEEE 42010 ?", "expected_page": 14},
+  {"question": "Pourquoi une seule vue ne suffit-elle pas pour décrire l'architecture d'un système ?", "expected_page": 19},
+  {"question": "Quel est le rôle d'un composant dans l'architecture d'un système ?", "expected_page": 23},
+  {"question": "Qu'est-ce qu'un connecteur et quels exemples en donne le cours ?", "expected_page": 24},
+  {"question": "Qu'appelle-t-on une configuration ou topologie architecturale ?", "expected_page": 25},
+  {"question": "Comment se déroulent la formation initiale puis le raffinement itératif d'une architecture logicielle ?", "expected_page": 29},
+  {"question": "Que signifie MTBF et pourquoi faut-il quantifier les exigences non fonctionnelles ?", "expected_page": 30},
+  {"question": "c'est quoi la différence entre un composant et un connecteur ?", "expected_page": 24},
+  {"question": "pourquoi l'architecture est importante dès le début du projet ?", "expected_page": 28},
+  {"question": "Comment installer Docker sur Windows ?", "expected_page": null},
+  {"question": "Qui a gagné la Coupe du monde 2022 ?", "expected_page": null}
+
+]

@@ -4,7 +4,7 @@ from tests.helpers import register, sample_deck, upload
 def _fake_generator(monkeypatch):
     from app.phase7_flashcards import routes
 
-    monkeypatch.setattr(routes, "generate_flashcards", lambda course, count, user_id=None: sample_deck(course))
+    monkeypatch.setattr(routes, "generate_flashcards", lambda course, count, user_id=None, stats=None: sample_deck(course))
 
 
 def _generate(client, headers, course="CNN"):

@@ -10,6 +10,7 @@ from app.phase1_llm.llm import LLMError, chat
 from app.phase2_embeddings.embeddings import embed_passages, embed_query
 from app.phase2_embeddings.vectorstore import get_course_chunks
 from app.phase7_flashcards.schemas import Concept, ConceptBatch, Flashcard, FlashcardBatch, FlashcardDeck
+from app.phase5_evaluation.stats import GenerationStats, collecting, record, record_value, reject
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -81,6 +82,7 @@ Format attendu :
                        json_schema=ConceptBatch.model_json_schema())
         except LLMError as e:
             logger.warning("Extraction de concepts ignorée : %s", e)
+            record("erreurs_llm")
             last_error = e
             continue
 
@@ -89,6 +91,7 @@ Format attendu :
                 concepts.append(Concept.model_validate(item))
             except ValidationError as e:
                 logger.info("Concept rejeté : %s", e.errors()[0]["msg"])
+                record("rejets_validation_concepts")
 
     return concepts, last_error
 
@@ -141,17 +144,20 @@ Rédige 1 flashcard de révision sur la notion « {concept.name} », à partir d
 
 Format attendu :
 {{"items":[{{"concept":"{concept.name}","front":"...?","back":"...","page":12}}]}}""")
+    record("appels_generation")
     raw = chat(SYSTEM_PROMPT, prompt, max_tokens=250, temperature=temperature,
                json_schema=FlashcardBatch.model_json_schema())
 
     items = first_items(raw)
     if not items:
+        reject("validation")
         return None
     item = {**items[0], "concept": concept.name}  # le concept est imposé par le code
     try:
         card = Flashcard.model_validate(item)
     except ValidationError as e:
         logger.info("Carte rejetée (%s) : %s", concept.name, e.errors()[0]["msg"])
+        reject("validation")
         return None
 
     # Si le modèle se trompe de page, on prend la page la plus proche parmi celles fournies
@@ -174,24 +180,38 @@ def verify_card(card: Flashcard, context: list[dict]) -> bool:
         has_error = BoolAnswers.model_validate_json(raw).answers[0]
     except (LLMError, ValidationError) as e:
         logger.warning("Vérification impossible, carte gardée sans contrôle : %s", e)
+        record("verifications_impossibles")
         return True
     if has_error:
         logger.info("Carte écartée (erreur détectée) : %s", card.front[:70])
+        reject("verification")
     return not has_error
 
-def generate_flashcards(course: str, count: int = 10, user_id: int | None = None) -> FlashcardDeck:
-    """Génère un paquet de flashcards sur les concepts les plus importants du cours (de l'étudiant user_id)."""
+def generate_flashcards(course: str, count: int = 10, user_id: int | None = None,
+                        stats: GenerationStats | None = None) -> FlashcardDeck:
+    """Génère un paquet de flashcards sur les concepts les plus importants du cours (de l'étudiant user_id).
+
+    stats (optionnel, phase 5) : collecteur rempli pendant la génération (appels, rejets, durée).
+    """
+    with collecting(stats):
+        return _generate_flashcards(course, count, user_id)
+
+
+def _generate_flashcards(course: str, count: int, user_id: int | None) -> FlashcardDeck:
     chunks = get_course_chunks(course, user_id)
     if not chunks:
         raise LookupError(f"Le cours « {course} » est introuvable ou vide.")
     # Les bouts de découpage (« ingle one. ») et les titres font inventer des cartes au modèle
     chunks = [c for c in chunks if len(c["text"]) >= MIN_PASSAGE_CHARS] or chunks
+    record_value("passages", len(chunks))
     t0 = time.perf_counter()
 
     # 1. Concepts clés
     concepts, last_error = extract_concepts(chunks, count)
     candidates = select_concepts(concepts, limit=int(count * CANDIDATE_MARGIN) + 2)
     logger.info("Flashcards « %s » : %d concepts trouvés, %d retenus", course, len(concepts), len(candidates))
+    record_value("concepts_trouves", len(concepts))
+    record_value("concepts_retenus", len(candidates))
     if not candidates:
         if last_error:
             raise last_error
@@ -211,6 +231,7 @@ def generate_flashcards(course: str, count: int = 10, user_id: int | None = None
                 candidate = make_card(concept, context, temperature=0.4 + 0.3 * attempt)
             except LLMError as e:
                 logger.warning("Carte ignorée (%s) : %s", concept.name, e)
+                record("erreurs_llm")
                 last_error = e
                 break
             if candidate is not None and verify_card(candidate, context):
@@ -221,6 +242,7 @@ def generate_flashcards(course: str, count: int = 10, user_id: int | None = None
         vector = embed_passages([f"{card.front} {card.back}"])[0]
         if card_vectors and float(np.max(np.array(card_vectors) @ np.array(vector))) >= CARD_SIMILARITY:
             logger.info("Carte écartée (doublon de sens) : %s", card.front[:70])
+            reject("doublon")
             continue
         card_vectors.append(vector)
         cards.append(card)

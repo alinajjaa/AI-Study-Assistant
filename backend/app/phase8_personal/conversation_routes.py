@@ -3,6 +3,7 @@ from sqlmodel import Session, col, delete, select
 
 from app.core.db import get_session
 from app.phase3_rag.rag import HISTORY_TURNS, answer
+from app.phase5_evaluation.tracking import track_tutor
 from app.phase8_personal.courses import require_course
 from app.phase8_personal.deps import get_current_user
 from app.phase8_personal.models import Conversation, Message, User, utcnow
@@ -106,8 +107,9 @@ def ask_in_conversation(body: AskInConversation, conversation: Conversation = De
     previous = _messages(session, conversation.id)
     history = [{"role": m.role, "content": m.content} for m in previous[-2 * HISTORY_TURNS:]]
     weak = [p.concept for p in weak_points(session, user.id, body.course or None)]
-    result = answer(body.question, body.course, user_id=user.id, history=history, level=user.level,
-                    weak_concepts=weak)
+    with track_tutor(course=body.course, level=user.level) as stats:
+        result = answer(body.question, body.course, user_id=user.id, history=history, level=user.level,
+                        weak_concepts=weak, stats=stats)
 
     if not previous and conversation.title == DEFAULT_TITLE:
         conversation.title = auto_title(body.question)
