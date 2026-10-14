@@ -179,9 +179,9 @@ def verify_card(card: Flashcard, context: list[dict]) -> bool:
         logger.info("Carte écartée (erreur détectée) : %s", card.front[:70])
     return not has_error
 
-def generate_flashcards(course: str, count: int = 10) -> FlashcardDeck:
-    """Génère un paquet de flashcards sur les concepts les plus importants du cours."""
-    chunks = get_course_chunks(course)
+def generate_flashcards(course: str, count: int = 10, user_id: int | None = None) -> FlashcardDeck:
+    """Génère un paquet de flashcards sur les concepts les plus importants du cours (de l'étudiant user_id)."""
+    chunks = get_course_chunks(course, user_id)
     if not chunks:
         raise LookupError(f"Le cours « {course} » est introuvable ou vide.")
     # Les bouts de découpage (« ingle one. ») et les titres font inventer des cartes au modèle

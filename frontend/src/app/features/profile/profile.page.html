@@ -1,0 +1,119 @@
+<header class="page-header">
+  <h1>Mon profil</h1>
+  @if (profile(); as p) {
+    <p class="lede">{{ p.email }}</p>
+  }
+</header>
+
+@if (error(); as message) {
+  <p class="alert alert--error" role="alert">{{ message }}</p>
+}
+
+@if (profile(); as p) {
+  @if (suggestion(); as s) {
+    <section class="card suggestion" aria-labelledby="suggestion-title">
+      <div>
+        <h2 id="suggestion-title" class="card__title">
+          {{ s.direction === 'up' ? 'Prêt pour le niveau supérieur ?' : 'Besoin d’explications plus simples ?' }}
+        </h2>
+        <p class="suggestion__text">
+          Tu as répondu « Je savais » à {{ percent(s.known_rate) }} de tes {{ s.reviews }} dernières cartes.
+          Passer au niveau <strong>{{ levelLabel(s.level) }}</strong> ?
+        </p>
+      </div>
+      <div class="suggestion__actions">
+        <button type="button" class="btn btn--sm" [disabled]="savingLevel()" (click)="acceptSuggestion()">
+          Passer en {{ levelLabel(s.level) }}
+        </button>
+        <button type="button" class="btn btn--ghost btn--sm" (click)="dismissSuggestion()">Ignorer</button>
+      </div>
+    </section>
+  }
+
+  <div class="grid">
+    <section class="card level" aria-labelledby="level-title">
+      <h2 id="level-title" class="card__title">Mon niveau</h2>
+      <p class="hint">Le tuteur adapte ses explications à ce niveau.</p>
+      <div class="segmented" role="radiogroup" aria-labelledby="level-title" aria-describedby="level-description">
+        @for (option of levels; track option.value) {
+          <button
+            type="button"
+            role="radio"
+            class="segment"
+            [attr.aria-checked]="option.value === level()"
+            [tabIndex]="option.value === level() ? 0 : -1"
+            [disabled]="savingLevel()"
+            (click)="selectLevel(option.value)"
+            (keydown)="onRadioKeydown($event, levelValues, option.value, selectLevel)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      <p id="level-description" class="hint">{{ levelDescription() }}.</p>
+    </section>
+
+    <section class="card" aria-labelledby="stats-title">
+      <h2 id="stats-title" class="card__title">Statistiques</h2>
+      <dl class="stats">
+        <div class="stat">
+          <dt>Cours</dt>
+          <dd>{{ p.stats.courses }}</dd>
+        </div>
+        <div class="stat">
+          <dt>Questions posées</dt>
+          <dd>{{ p.stats.questions }}</dd>
+        </div>
+        <div class="stat">
+          <dt>Examens</dt>
+          <dd>{{ p.stats.exams }}</dd>
+        </div>
+        <div class="stat">
+          <dt>Cartes révisées</dt>
+          <dd>{{ p.stats.cards_reviewed }}</dd>
+        </div>
+        <div class="stat">
+          <dt>Cartes sues</dt>
+          <dd>{{ p.stats.known_rate === null ? '—' : percent(p.stats.known_rate) }}</dd>
+        </div>
+      </dl>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="weak-title">
+    <h2 id="weak-title" class="card__title">Points faibles</h2>
+    @if (p.weak_points.length === 0) {
+      <p class="hint">
+        Aucun point faible pour l'instant. Ils apparaissent quand tu marques une notion « À revoir »
+        au moins deux fois dans les <a routerLink="/flashcards">flashcards</a>.
+      </p>
+    } @else {
+      <p class="hint">Les notions que tu marques le plus souvent « À revoir ». Le tuteur te les signale aussi.</p>
+      <ul class="weak-list">
+        @for (point of p.weak_points; track point.course + point.concept) {
+          <li class="weak">
+            <div class="weak__info">
+              <span class="weak__concept">{{ point.concept }}</span>
+              <span class="hint">{{ point.course }} · {{ weakLabel(point) }}</span>
+            </div>
+            <div class="weak__bar" aria-hidden="true">
+              <span [style.width.%]="point.to_review_rate * 100"></span>
+            </div>
+            <a
+              class="btn btn--ghost btn--sm"
+              routerLink="/flashcards"
+              [queryParams]="{ course: point.course }"
+              [attr.aria-label]="'Réviser ' + point.concept + ' dans les flashcards du cours ' + point.course"
+            >
+              Réviser
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+} @else if (loading()) {
+  <div class="card loading">
+    <app-loader label="Chargement du profil…" />
+  </div>
+}

@@ -2,41 +2,71 @@ import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { finalize } from 'rxjs';
 import { toMessage } from '../../core/interceptors/error.interceptor';
 import { ExamOptions } from '../../core/models/exam.models';
-import { ChatMessage, UploadResponse } from '../../core/models/tutor.models';
+import { UploadResponse } from '../../core/models/tutor.models';
+import { ConversationsService } from '../../core/services/conversations.service';
 import { ExamJobsService } from '../../core/services/exam-jobs.service';
 import { TutorApiService } from '../../core/services/tutor-api.service';
 import { ChatThread } from './components/chat-thread/chat-thread';
+import { ConversationList } from './components/conversation-list/conversation-list';
 import { CourseSelector } from '../../shared/components/course-selector/course-selector';
 import { ExamDialog } from './components/exam-dialog/exam-dialog';
+import { Loader } from '../../shared/components/loader/loader';
 import { QuestionInput } from './components/question-input/question-input';
 import { UploadPanel } from './components/upload-panel/upload-panel';
 
 @Component({
   selector: 'app-tutor-page',
-  imports: [UploadPanel, CourseSelector, ChatThread, QuestionInput, ExamDialog],
+  imports: [UploadPanel, CourseSelector, ChatThread, QuestionInput, ExamDialog, ConversationList, Loader],
   templateUrl: './tutor.page.html',
   styleUrl: './tutor.page.css',
 })
 export class TutorPage {
   private readonly api = inject(TutorApiService);
   protected readonly examJobs = inject(ExamJobsService);
+  protected readonly conversations = inject(ConversationsService);
   private readonly questionInput = viewChild.required(QuestionInput);
-  private nextMessageId = 1;
 
   protected readonly courses = signal<string[]>([]);
   protected readonly coursesLoading = signal(false);
   /** null = tous les cours. */
   protected readonly selectedCourse = signal<string | null>(null);
   protected readonly deleting = signal(false);
-  protected readonly messages = signal<ChatMessage[]>([]);
   protected readonly draft = signal('');
   protected readonly error = signal<string | null>(null);
   /** Cours pour lequel la modale d'examen est ouverte (null = fermée). */
   protected readonly examCourse = signal<string | null>(null);
-  protected readonly asking = computed(() => this.messages().some((m) => m.status === 'pending'));
+  protected readonly asking = computed(() => this.conversations.asking());
 
   constructor() {
     this.loadCourses();
+    this.conversations.load().subscribe({
+      next: () => this.syncCourseWithConversation(),
+      error: (err: unknown) => this.error.set(toMessage(err)),
+    });
+  }
+
+  protected onSelectConversation(id: number): void {
+    if (id !== this.conversations.activeId()) {
+      this.conversations.select(id);
+      this.syncCourseWithConversation();
+    }
+  }
+
+  protected onNewConversation(): void {
+    this.conversations.startNew();
+    this.questionInput().focus();
+  }
+
+  protected onRenameConversation(event: { id: number; title: string }): void {
+    this.conversations.rename(event.id, event.title).subscribe({
+      error: (err: unknown) => this.error.set(toMessage(err)),
+    });
+  }
+
+  protected onDeleteConversation(id: number): void {
+    this.conversations.remove(id).subscribe({
+      error: (err: unknown) => this.error.set(toMessage(err)),
+    });
   }
 
   protected onSelectCourse(course: string | null): void {
@@ -89,20 +119,8 @@ export class TutorPage {
   }
 
   protected onAsk(question: string): void {
-    const id = this.nextMessageId++;
-    const course = this.selectedCourse();
-    this.messages.update((list) => [
-      ...list,
-      { id, question, course, status: 'pending', response: null, error: null },
-    ]);
-
-    this.api.ask(question, course).subscribe({
-      next: (response) => this.updateMessage(id, { status: 'done', response }),
-      error: (err: unknown) => {
-        const message = toMessage(err);
-        this.updateMessage(id, { status: 'error', error: message });
-        this.error.set(message);
-      },
+    this.conversations.ask(question, this.selectedCourse()).subscribe({
+      error: (err: unknown) => this.error.set(toMessage(err)),
     });
   }
 
@@ -122,12 +140,17 @@ export class TutorPage {
           if (selected !== null && !courses.includes(selected)) {
             this.selectedCourse.set(null);
           }
+          this.syncCourseWithConversation();
         },
         error: (err: unknown) => this.error.set(toMessage(err)),
       });
   }
 
-  private updateMessage(id: number, patch: Partial<ChatMessage>): void {
-    this.messages.update((list) => list.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+  /** Une conversation rouverte reprend le cours de sa dernière question (s'il existe encore). */
+  private syncCourseWithConversation(): void {
+    const course = this.conversations.active()?.course;
+    if (course !== undefined && (course === null || this.courses().includes(course))) {
+      this.selectedCourse.set(course);
+    }
   }
 }

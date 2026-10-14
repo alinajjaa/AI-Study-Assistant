@@ -6,12 +6,21 @@ from app.phase2_embeddings.vectorstore import ensure_collection, upsert, delete_
 MIN_CHUNK_CHARS = 120  # en dessous, c'est un titre ou un schéma sans contenu utile
 
 
-def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """Découpe un texte en morceaux qui se chevauchent pour ne pas couper une idée en deux."""
+def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP,
+               min_chars: int = MIN_CHUNK_CHARS) -> list[str]:
+    """Découpe un texte en morceaux qui se chevauchent pour ne pas couper une idée en deux.
+
+    Un dernier morceau trop court (ex. « ingle one. ») est rattaché au morceau précédent.
+    """
     text = " ".join(text.split())  # supprime les espaces et retours à la ligne en trop
-    chunks, start = [], 0
+    chunks, starts, start = [], [], 0
     while start < len(text):
-        chunks.append(text[start:start + size])
+        piece = text[start:start + size]
+        if chunks and len(piece) < min_chars:
+            chunks[-1] = text[starts[-1]:]  # le précédent va jusqu'à la fin de la page
+            break
+        chunks.append(piece)
+        starts.append(start)
         start += size - overlap
     return chunks
 
@@ -32,13 +41,15 @@ def extract_chunks(data: bytes, course: str) -> list[dict]:
     return chunks
 
 
-def ingest_pdf(data: bytes, course: str) -> int:
-    """PDF → chunks → embeddings → Qdrant. Renvoie le nombre de chunks indexés."""
+def ingest_pdf(data: bytes, course: str, user_id: int | None) -> int:
+    """PDF → chunks → embeddings → Qdrant (cours privé de l'étudiant). Renvoie le nombre de chunks indexés."""
     chunks = extract_chunks(data, course)  # lève ValueError si le PDF est invalide
     if not chunks:
         return 0
+    for chunk in chunks:
+        chunk["user_id"] = user_id
     ensure_collection()
-    delete_course(course)  # réindexer le même cours ne crée pas de doublons
+    delete_course(course, user_id=user_id)  # réindexer le même cours ne crée pas de doublons
     vectors = embed_passages([c["text"] for c in chunks])
     upsert(chunks, vectors)
     return len(chunks)
@@ -61,7 +72,7 @@ if __name__ == "__main__":
 
     course = path.stem
     try:
-        n = ingest_pdf(path.read_bytes(), course)
+        n = ingest_pdf(path.read_bytes(), course, user_id=None)  # cours sans propriétaire : invisible dans l'API
     except ValueError as e:
         print(f"❌ {e}")
         sys.exit(1)
@@ -73,5 +84,5 @@ if __name__ == "__main__":
         sys.exit(0)
 
     question = input("\nPose une question pour tester la recherche : ")
-    for hit in search(embed_query(question), k=3, course=course):
+    for hit in search(embed_query(question), k=3, course=course, user_id=None):
         print(f"\np.{hit['page']}  score={hit['score']:.3f}\n{hit['text'][:200]}...")

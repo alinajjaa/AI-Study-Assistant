@@ -1,0 +1,50 @@
+<section class="auth card" aria-labelledby="login-title">
+  <header class="auth__header">
+    <h1 id="login-title">Connexion</h1>
+    <p class="lede">Retrouve tes cours, tes conversations et tes révisions.</p>
+  </header>
+
+  @if (redirected && !error()) {
+    <p class="alert alert--info" role="status">Connecte-toi pour continuer.</p>
+  }
+
+  <form class="form" novalidate (submit)="submit($event)">
+    <div>
+      <label class="label" for="login-email">Email</label>
+      <input
+        id="login-email"
+        class="field"
+        type="email"
+        autocomplete="email"
+        required
+        [value]="email()"
+        [disabled]="loading()"
+        (input)="onInput('email', $event)"
+      />
+    </div>
+
+    <div>
+      <label class="label" for="login-password">Mot de passe</label>
+      <input
+        id="login-password"
+        class="field"
+        type="password"
+        autocomplete="current-password"
+        required
+        [value]="password()"
+        [disabled]="loading()"
+        (input)="onInput('password', $event)"
+      />
+    </div>
+
+    @if (error(); as message) {
+      <p class="alert alert--error" role="alert">{{ message }}</p>
+    }
+
+    <button type="submit" class="btn btn--block" [disabled]="loading()">
+      {{ loading() ? 'Connexion…' : 'Se connecter' }}
+    </button>
+  </form>
+
+  <p class="switch">Pas encore de compte ? <a routerLink="/register">Créer un compte</a></p>
+</section>

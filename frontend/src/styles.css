@@ -292,6 +292,11 @@ svg {
   color: var(--danger);
 }
 
+.alert--info {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
 .kbd {
   display: inline-block;
   padding: 0 0.35em;

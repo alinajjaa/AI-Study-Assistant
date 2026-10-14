@@ -48,3 +48,22 @@ export const DEFAULT_EXAM_OPTIONS: ExamOptions = {
   difficulty: 'moyen',
   includeAnswers: true,
 };
+
+/** Examen enregistré dans l'historique (GET /api/exams). */
+export interface ExamRecord {
+  id: number;
+  course: string;
+  format: ExamFormat;
+  difficulty: Difficulty;
+  question_count: number;
+  include_answers: boolean;
+  created_at: string;
+}
+
+export function examFormatLabel(format: ExamFormat): string {
+  return EXAM_FORMATS.find((f) => f.value === format)?.label ?? format;
+}
+
+export function difficultyLabel(difficulty: Difficulty): string {
+  return DIFFICULTIES.find((d) => d.value === difficulty)?.label ?? difficulty;
+}

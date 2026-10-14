@@ -62,6 +62,12 @@
   min-width: 0;
 }
 
+.loading-messages {
+  display: grid;
+  place-items: center;
+  min-height: 10rem;
+}
+
 .composer {
   position: sticky;
   bottom: var(--space-4);

@@ -15,3 +15,9 @@ COLLECTION = "courses"
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 150
 TOP_K = 3
+
+# Comptes étudiants (phase 8)
+JWT_SECRET = os.getenv("JWT_SECRET", "")
+JWT_EXPIRE_HOURS = float(os.getenv("JWT_EXPIRE_HOURS", "24"))
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./study.db")
+STORAGE_DIR = os.getenv("STORAGE_DIR", "./storage")  # PDF des examens générés

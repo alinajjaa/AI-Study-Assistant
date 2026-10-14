@@ -21,28 +21,63 @@
   <section class="main" aria-label="Flashcards du cours">
     @if (selectedCourse(); as course) {
       @if (reviewCards(); as cards) {
-        <app-flashcard-review [cards]="cards" [course]="course" (exit)="stopReview()" />
+        <app-flashcard-review [cards]="cards" [course]="course" (answered)="onAnswered($event)" (exit)="stopReview()" />
       } @else {
-        @if (deck(); as current) {
-          <div class="card deck">
-            <div class="deck__info">
-              <h2 class="card__title">Paquet prêt</h2>
-              <p class="deck__meta">
-                <strong>{{ current.cards.length }} carte{{ current.cards.length > 1 ? 's' : '' }}</strong>
-                @if (current.cards.length < current.requested) {
-                  sur {{ current.requested }} demandées
-                }
-                @if (deckDate(); as date) {
-                  · générées le {{ date }}
-                }
-              </p>
-            </div>
-            <button type="button" class="btn" (click)="startReview()">Réviser le paquet</button>
+        <section class="card decks" aria-labelledby="decks-title">
+          <div class="decks__header">
+            <h2 id="decks-title" class="card__title">Mes paquets</h2>
+            @if (decksLoading()) {
+              <app-loader size="sm" />
+            }
           </div>
-        }
+          @if (decks().length === 0) {
+            @if (!decksLoading()) {
+              <p class="hint">Aucun paquet pour ce cours : génère ton premier paquet ci-dessous.</p>
+            }
+          } @else {
+            <ul class="deck-list">
+              @for (deck of decks(); track deck.id; let first = $first) {
+                <li class="deck" [class.deck--latest]="first">
+                  <div class="deck__info">
+                    <p class="deck__meta">
+                      <strong>{{ deck.card_count }} carte{{ deck.card_count > 1 ? 's' : '' }}</strong>
+                      · générées le {{ deckDate(deck) }}
+                    </p>
+                    @if (first) {
+                      <span class="deck__badge">Dernier paquet</span>
+                    }
+                  </div>
+                  <div class="deck__actions">
+                    <button
+                      type="button"
+                      class="btn btn--sm"
+                      [class.btn--ghost]="!first"
+                      [disabled]="opening() !== null"
+                      [attr.aria-label]="'Réviser le paquet du ' + deckDate(deck)"
+                      (click)="startReview(deck)"
+                    >
+                      {{ opening() === deck.id ? 'Ouverture…' : 'Réviser' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="icon-btn icon-btn--danger"
+                      [attr.aria-label]="'Supprimer le paquet du ' + deckDate(deck)"
+                      title="Supprimer le paquet"
+                      (click)="deleteDeck(deck)"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="m6 7 1 13h10l1-13" /><path d="M9 7V4h6v3" />
+                      </svg>
+                    </button>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
 
         <div class="card setup">
-          <h2 class="card__title">{{ deck() ? 'Nouveau paquet' : 'Générer des flashcards' }}</h2>
+          <h2 class="card__title">{{ decks().length ? 'Nouveau paquet' : 'Générer des flashcards' }}</h2>
           <p class="hint course-name">Cours : <strong>{{ course }}</strong></p>
 
           <div>
@@ -73,18 +108,18 @@
             <button
               type="button"
               class="btn"
-              [class.btn--ghost]="deck() !== null"
+              [class.btn--ghost]="decks().length > 0"
               [disabled]="generating()"
               (click)="generate()"
             >
               @if (generating()) {
                 Génération en cours… {{ elapsed() }}
               } @else {
-                {{ deck() ? 'Régénérer' : 'Générer les flashcards' }}
+                {{ decks().length ? 'Générer un nouveau paquet' : 'Générer les flashcards' }}
               }
             </button>
-            @if (deck() && !generating()) {
-              <span class="hint">Le paquet actuel sera remplacé à la fin de la génération.</span>
+            @if (decks().length && !generating()) {
+              <span class="hint">Tes paquets précédents sont conservés.</span>
             }
           </div>
         </div>

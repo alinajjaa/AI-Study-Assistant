@@ -18,7 +18,16 @@
 }
 
 <div class="layout">
-  <aside class="sidebar" aria-label="Gestion des cours">
+  <aside class="sidebar" aria-label="Conversations et cours">
+    <app-conversation-list
+      [conversations]="conversations.conversations()"
+      [activeId]="conversations.activeId()"
+      [loading]="conversations.loadingList()"
+      (selectConversation)="onSelectConversation($event)"
+      (newConversation)="onNewConversation()"
+      (rename)="onRenameConversation($event)"
+      (remove)="onDeleteConversation($event)"
+    />
     <app-upload-panel (uploaded)="onUploaded($event)" />
     <app-course-selector
       [courses]="courses()"
@@ -34,7 +43,13 @@
   </aside>
 
   <section class="chat" aria-label="Conversation avec le tuteur">
-    <app-chat-thread [messages]="messages()" (suggestion)="onSuggestion($event)" />
+    @if (conversations.loadingMessages()) {
+      <div class="card loading-messages">
+        <app-loader label="Chargement de la conversation…" />
+      </div>
+    } @else {
+      <app-chat-thread [messages]="conversations.messages()" (suggestion)="onSuggestion($event)" />
+    }
     <app-question-input
       class="composer"
       [(text)]="draft"

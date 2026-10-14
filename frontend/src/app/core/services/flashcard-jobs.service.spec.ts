@@ -2,12 +2,18 @@ import { TestBed } from '@angular/core/testing';
 import { Subject } from 'rxjs';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { FLASHCARD_MINUTES, FlashcardDeck } from '../models/flashcard.models';
-import { loadDeck } from '../utils/flashcards.storage';
 import { FlashcardJobsService } from './flashcard-jobs.service';
 import { FlashcardsApiService } from './flashcards-api.service';
 
 const cards = (n: number): FlashcardDeck['cards'] =>
   Array.from({ length: n }, (_, i) => ({ concept: `C${i}`, front: `Question ${i} ?`, back: `Réponse ${i}`, page: i + 1 }));
+const deck = (n: number): FlashcardDeck => ({
+  id: 7,
+  deck_id: 7,
+  course: 'CNN',
+  cards: cards(n),
+  created_at: '2026-10-14T10:00:00Z',
+});
 
 describe('FlashcardJobsService', () => {
   let response: Subject<FlashcardDeck>;
@@ -41,24 +47,23 @@ describe('FlashcardJobsService', () => {
     }
   });
 
-  it('mémorise le paquet reçu et annonce le nombre réel de cartes', () => {
+  it('signale le paquet enregistré et annonce le nombre réel de cartes', () => {
     jobs.start('CNN', 10);
-    response.next({ course: 'CNN', cards: cards(10) });
+    response.next(deck(10));
     response.complete();
 
     expect(jobs.isGenerating('CNN')).toBe(false);
-    expect(jobs.deck('CNN')?.cards).toHaveLength(10);
-    expect(loadDeck('CNN')?.cards).toHaveLength(10);
+    expect(jobs.lastDeck()?.deck_id).toBe(7);
+    expect(localStorage.length).toBe(0); // plus de paquets dans le navigateur
     expect(lastToast()).toMatchObject({ kind: 'success', title: 'Flashcards « CNN » prêtes : 10 cartes' });
   });
 
   it('avertit quand le backend renvoie moins de cartes que demandé', () => {
     jobs.start('CNN', 30);
-    response.next({ course: 'CNN', cards: cards(12) });
+    response.next(deck(12));
     response.complete();
 
     expect(lastToast()).toMatchObject({ kind: 'warning', title: 'Flashcards « CNN » prêtes : 12 cartes au lieu de 30' });
-    expect(jobs.deck('CNN')?.requested).toBe(30);
   });
 
   it("affiche l'erreur de l'intercepteur et libère le cours", () => {

@@ -1,0 +1,73 @@
+<section class="auth card" aria-labelledby="register-title">
+  <header class="auth__header">
+    <h1 id="register-title">Créer un compte</h1>
+    <p class="lede">Tes cours restent privés et le tuteur s'adapte à ton niveau.</p>
+  </header>
+
+  <form class="form" novalidate (submit)="submit($event)">
+    <div>
+      <label class="label" for="register-email">Email</label>
+      <input
+        id="register-email"
+        class="field"
+        type="email"
+        autocomplete="email"
+        required
+        [value]="email()"
+        [disabled]="loading()"
+        (input)="onInput('email', $event)"
+      />
+    </div>
+
+    <div>
+      <label class="label" for="register-password">Mot de passe</label>
+      <input
+        id="register-password"
+        class="field"
+        type="password"
+        autocomplete="new-password"
+        required
+        aria-describedby="register-password-hint"
+        [attr.minlength]="passwordMin"
+        [attr.maxlength]="passwordMax"
+        [value]="password()"
+        [disabled]="loading()"
+        (input)="onInput('password', $event)"
+      />
+      <p id="register-password-hint" class="hint field-hint">Entre {{ passwordMin }} et {{ passwordMax }} caractères.</p>
+    </div>
+
+    <div>
+      <span id="level-label" class="label">Ton niveau</span>
+      <div class="segmented" role="radiogroup" aria-labelledby="level-label" aria-describedby="level-description">
+        @for (option of levels; track option.value) {
+          <button
+            type="button"
+            role="radio"
+            class="segment"
+            [attr.aria-checked]="option.value === level()"
+            [tabIndex]="option.value === level() ? 0 : -1"
+            [disabled]="loading()"
+            (click)="setLevel(option.value)"
+            (keydown)="onRadioKeydown($event, levelValues, option.value, setLevel)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      <p id="level-description" class="hint level-description">
+        {{ levelDescription() }}. Modifiable à tout moment depuis ton profil.
+      </p>
+    </div>
+
+    @if (error(); as message) {
+      <p class="alert alert--error" role="alert">{{ message }}</p>
+    }
+
+    <button type="submit" class="btn btn--block" [disabled]="loading()">
+      {{ loading() ? 'Création du compte…' : 'Créer mon compte' }}
+    </button>
+  </form>
+
+  <p class="switch">Déjà inscrit ? <a routerLink="/login">Se connecter</a></p>
+</section>

@@ -2,7 +2,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ExamOptions } from '../models/exam.models';
+import { ExamOptions, ExamRecord } from '../models/exam.models';
 
 @Injectable({ providedIn: 'root' })
 export class ExamApiService {
@@ -25,5 +25,19 @@ export class ExamApiService {
       },
       { observe: 'response', responseType: 'blob' },
     );
+  }
+
+  /** Historique des examens de l'étudiant, le plus récent en premier. */
+  listExams(): Observable<ExamRecord[]> {
+    return this.http.get<ExamRecord[]>(`${this.apiUrl}/exams`);
+  }
+
+  /** Retéléchargement d'un examen de l'historique (réponse complète pour lire Content-Disposition). */
+  downloadExam(id: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.apiUrl}/exams/${id}/pdf`, { observe: 'response', responseType: 'blob' });
+  }
+
+  deleteExam(id: number): Observable<{ deleted: number }> {
+    return this.http.delete<{ deleted: number }>(`${this.apiUrl}/exams/${id}`);
   }
 }

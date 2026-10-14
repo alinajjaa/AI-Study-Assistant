@@ -2,3 +2,6 @@
 .env
 __pycache__/
 mlruns/
+*.db
+storage/
+.pytest_cache/

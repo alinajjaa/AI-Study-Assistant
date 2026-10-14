@@ -1,0 +1,86 @@
+<header class="page-header">
+  <h1>Mes examens</h1>
+  <p class="lede">Tous les examens générés, à retélécharger quand tu veux.</p>
+</header>
+
+@if (jobs.hasJobs()) {
+  <p class="alert alert--info" role="status">
+    Un examen est en cours de génération : il apparaîtra ici dès qu'il sera prêt.
+  </p>
+}
+
+@if (error(); as message) {
+  <p class="alert alert--error" role="alert">{{ message }}</p>
+}
+
+<section class="card" aria-labelledby="exams-title">
+  <div class="header">
+    <h2 id="exams-title" class="card__title">Historique</h2>
+    @if (loading()) {
+      <app-loader size="sm" />
+    } @else {
+      <span class="count">{{ exams().length }}</span>
+    }
+  </div>
+
+  @if (exams().length === 0) {
+    @if (!loading()) {
+      <p class="hint empty">
+        Aucun examen pour l'instant. Génère-en un depuis le <a routerLink="/tutor">tuteur</a>
+        (bouton d'examen à côté de chaque cours).
+      </p>
+    }
+  } @else {
+    <div class="table-wrap">
+      <table class="exams">
+        <caption class="sr-only">Examens générés, du plus récent au plus ancien</caption>
+        <thead>
+          <tr>
+            <th scope="col">Cours</th>
+            <th scope="col">Type</th>
+            <th scope="col">Difficulté</th>
+            <th scope="col" class="num">Questions</th>
+            <th scope="col">Date</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (exam of exams(); track exam.id) {
+            <tr>
+              <td class="course" [title]="exam.course">{{ exam.course }}</td>
+              <td>
+                {{ formatLabel(exam.format) }}
+                @if (!exam.include_answers) {
+                  <span class="tag">sans corrigé</span>
+                }
+              </td>
+              <td>{{ difficultyLabel(exam.difficulty) }}</td>
+              <td class="num">{{ exam.question_count }}</td>
+              <td class="date">{{ date(exam) }}</td>
+              <td class="actions">
+                <button
+                  type="button"
+                  class="btn btn--sm"
+                  [disabled]="isBusy(exam.id)"
+                  [attr.aria-label]="'Télécharger l\'examen ' + exam.course + ' du ' + date(exam)"
+                  (click)="download(exam)"
+                >
+                  Télécharger
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--ghost btn--sm"
+                  [disabled]="isBusy(exam.id)"
+                  [attr.aria-label]="'Supprimer l\'examen ' + exam.course + ' du ' + date(exam)"
+                  (click)="remove(exam)"
+                >
+                  Supprimer
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

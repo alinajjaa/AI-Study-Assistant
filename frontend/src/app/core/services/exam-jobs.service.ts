@@ -36,12 +36,15 @@ export class ExamJobsService {
 
   private readonly _jobs = signal<ReadonlyMap<string, number>>(new Map());
   private readonly _now = signal(Date.now());
+  private readonly _completed = signal(0);
 
   /** Cours → heure de début (ms). */
   readonly jobs = this._jobs.asReadonly();
   /** Heure courante, rafraîchie chaque seconde tant qu'une génération tourne. */
   readonly now = this._now.asReadonly();
   readonly hasJobs = computed(() => this._jobs().size > 0);
+  /** Incrémenté à chaque examen généré (et enregistré) : la page « Mes examens » se recharge. */
+  readonly completed = this._completed.asReadonly();
 
   isGenerating(course: string): boolean {
     return this._jobs().has(course);
@@ -70,6 +73,7 @@ export class ExamJobsService {
           }
           const filename = filenameFromContentDisposition(res.headers.get('Content-Disposition'), course);
           downloadBlob(blob, filename);
+          this._completed.update((n) => n + 1);
 
           const expected =
             readInt(res.headers.get('X-Questions-Expected')) ??

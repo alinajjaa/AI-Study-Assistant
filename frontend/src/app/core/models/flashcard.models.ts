@@ -19,18 +19,19 @@ export interface Flashcard {
   page: number;
 }
 
-/** Réponse de POST /api/courses/{course}/flashcards. */
+/** Paquet enregistré (GET /api/flashcards/decks/{id}, et réponse de POST /api/courses/{course}/flashcards). */
 export interface FlashcardDeck {
+  id: number;
+  deck_id: number;
   course: string;
   cards: Flashcard[];
+  created_at: string;
 }
 
-/** Paquet mémorisé dans localStorage pour réviser sans regénérer. */
-export interface StoredDeck {
+/** Paquet dans la liste « Mes paquets » (GET /api/flashcards/decks). */
+export interface DeckSummary {
+  id: number;
   course: string;
-  cards: Flashcard[];
-  /** Nombre de cartes demandé (le backend peut en renvoyer moins pour un petit cours). */
-  requested: CardCount;
-  /** Date de génération (ms). */
-  createdAt: number;
+  card_count: number;
+  created_at: string;
 }

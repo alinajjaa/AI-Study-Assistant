@@ -37,6 +37,8 @@ export class FlashcardReview implements OnInit {
   readonly cards = input.required<readonly Flashcard[]>();
   readonly course = input.required<string>();
   readonly exit = output<void>();
+  /** Émis à chaque « Je savais » / « À revoir » : la page enregistre la révision. */
+  readonly answered = output<{ card: Flashcard; known: boolean }>();
 
   /** Session créée une fois, puis réinitialisée par « Recommencer » / « Revoir ». */
   protected readonly session = new ReviewSession([]);
@@ -75,6 +77,10 @@ export class FlashcardReview implements OnInit {
   }
 
   protected answer(answer: CardAnswer): void {
+    const card = this.session.current();
+    if (card && this.session.flipped()) {
+      this.answered.emit({ card, known: answer === 'known' });
+    }
     this.session.answer(answer);
     this.focusCard();
   }

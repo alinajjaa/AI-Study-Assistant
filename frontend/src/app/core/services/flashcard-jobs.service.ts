@@ -2,14 +2,12 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize } from 'rxjs';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { toMessage } from '../interceptors/error.interceptor';
-import { CardCount, FLASHCARD_MINUTES, StoredDeck } from '../models/flashcard.models';
-import { loadDeck, saveDeck } from '../utils/flashcards.storage';
+import { CardCount, FLASHCARD_MINUTES, FlashcardDeck } from '../models/flashcard.models';
 import { FlashcardsApiService } from './flashcards-api.service';
 
 /**
  * Générations de flashcards en arrière-plan, indépendantes des composants :
- * elles continuent si l'on retourne au tuteur. Garde aussi les paquets reçus en mémoire,
- * pour réviser même si localStorage est indisponible.
+ * elles continuent si l'on retourne au tuteur. Les paquets sont enregistrés par le backend.
  */
 @Injectable({ providedIn: 'root' })
 export class FlashcardJobsService {
@@ -19,22 +17,18 @@ export class FlashcardJobsService {
 
   private readonly _jobs = signal<ReadonlyMap<string, number>>(new Map());
   private readonly _now = signal(Date.now());
-  /** Paquets générés pendant la session (prioritaires sur localStorage). */
-  private readonly _decks = signal<ReadonlyMap<string, StoredDeck>>(new Map());
+  private readonly _lastDeck = signal<FlashcardDeck | null>(null);
 
   /** Cours → heure de début (ms). */
   readonly jobs = this._jobs.asReadonly();
   /** Heure courante, rafraîchie chaque seconde tant qu'une génération tourne. */
   readonly now = this._now.asReadonly();
   readonly hasJobs = computed(() => this._jobs().size > 0);
+  /** Dernier paquet généré : la page Flashcards recharge « Mes paquets » quand il change. */
+  readonly lastDeck = this._lastDeck.asReadonly();
 
   isGenerating(course: string): boolean {
     return this._jobs().has(course);
-  }
-
-  /** Dernier paquet du cours (session, sinon localStorage). Réactif : suit les nouvelles générations. */
-  deck(course: string): StoredDeck | null {
-    return this._decks().get(course) ?? loadDeck(course);
   }
 
   start(course: string, count: CardCount): void {
@@ -52,16 +46,11 @@ export class FlashcardJobsService {
       .generate(course, count)
       .pipe(finalize(() => this.setJob(course, null)))
       .subscribe({
-        next: (res) => {
-          const deck: StoredDeck = { course, cards: res.cards, requested: count, createdAt: Date.now() };
-          this._decks.update((decks) => new Map(decks).set(course, deck));
-          const saved = saveDeck(deck);
-
+        next: (deck) => {
+          this._lastDeck.set(deck);
           const received = deck.cards.length;
           const cards = `${received} carte${received > 1 ? 's' : ''}`;
-          const where = saved
-            ? 'Ouvre l’onglet Flashcards pour réviser.'
-            : 'Paquet non mémorisé (stockage du navigateur indisponible) : révise-le avant de fermer l’onglet.';
+          const where = 'Ouvre l’onglet Flashcards pour réviser (paquet enregistré dans « Mes paquets »).';
           if (received < count) {
             this.toasts.show(
               'warning',

@@ -369,9 +369,9 @@ def generate_section(plan: SectionPlan, chunks: list[dict], difficulty: Difficul
 
 
 def generate_exam(course: str, fmt: ExamFormat = "complet", num_questions: int = 20,
-                  difficulty: Difficulty = "moyen") -> Exam:
-    """Génère un examen noté sur 20, réparti sur l'ensemble du cours."""
-    chunks = get_course_chunks(course)
+                  difficulty: Difficulty = "moyen", user_id: int | None = None) -> Exam:
+    """Génère un examen noté sur 20, réparti sur l'ensemble du cours (de l'étudiant user_id)."""
+    chunks = get_course_chunks(course, user_id)
     if not chunks:
         raise LookupError(f"Le cours « {course} » est introuvable ou vide.")
     # Les slides très courtes (titres, schémas) donnent des questions ambiguës, voire un corrigé faux
