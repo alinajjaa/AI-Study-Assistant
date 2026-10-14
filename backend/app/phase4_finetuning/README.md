@@ -71,8 +71,10 @@ Fichiers produits dans `data/` (ignorés par git, sauf `sample.jsonl`) :
 1. Ouvrir `notebooks/finetune_lora.ipynb` dans Colab (Fichier → Importer un notebook).
 2. **Exécution → Modifier le type d'exécution → GPU T4**.
 3. Exécuter les cellules dans l'ordre. Envoyer `train.jsonl` et `test.jsonl` quand le notebook le demande.
-4. Remplacer `<HF_USERNAME>` par ton nom d'utilisateur Hugging Face. Ajouter un jeton **en écriture** dans
-   les secrets Colab (🔑, nom `HF_TOKEN`).
+4. Dans les secrets Colab (🔑), ajouter et autoriser pour le notebook : `HF_TOKEN` (jeton **en écriture**)
+   et `HF_REPO_ID` (ex. `Alinajjaa/study-tutor-qwen2.5-1.5b-lora`) ou, à défaut, `HF_USERNAME`. Rien à
+   modifier dans le code. Les fichiers envoyés sont rangés dans `data/train.jsonl` et `data/test.jsonl`, même
+   si Colab les renomme lors d'un second envoi.
 
 | Étape | Durée (T4) |
 |---|---|
@@ -82,14 +84,15 @@ Fichiers produits dans `data/` (ignorés par git, sauf `sample.jsonl`) :
 | Génération base + affiné sur le test | 5 à 10 min |
 | Publication sur le Hub | 1 min |
 
-Réglages : QLoRA (4 bits nf4, calcul en float16), LoRA `r=16`, `alpha=32`, `dropout=0.05` sur `q/k/v/o_proj` et
+Réglages : QLoRA (4 bits nf4, calcul en float16 car le T4 ne gère pas bfloat16, poids LoRA en float32), LoRA `r=16`, `alpha=32`, `dropout=0.05` sur `q/k/v/o_proj` et
 `gate/up/down_proj`, `SFTTrainer`, 3 époques, lot effectif de 16 (4 × 4), taux d'apprentissage 2e-4 avec
 décroissance cosinus, séquences de 1 024 jetons, `gradient_checkpointing`, optimiseur `paged_adamw_8bit`.
 La perte n'est calculée que sur la réponse du tuteur (format prompt / completion).
 
 À télécharger à la fin : `results_base.jsonl`, `results_finetuned.jsonl` (à copier dans `data/`),
 `loss_curve.png` et l'adaptateur zippé. L'adaptateur est publié sur
-`<HF_USERNAME>/study-tutor-qwen2.5-1.5b-lora` avec une model card en français.
+le dépôt `HF_REPO_ID` avec une model card en français. Version publiée :
+[Alinajjaa/study-tutor-qwen2.5-1.5b-lora](https://huggingface.co/Alinajjaa/study-tutor-qwen2.5-1.5b-lora).
 
 La comparaison est équitable : mêmes prompts, même température (0.3), même graine. Le modèle de base est le
 même modèle 4 bits avec l'adaptateur désactivé.
@@ -145,7 +148,7 @@ Dans `backend/.env` :
 
 ```
 LLM_PROVIDER=hf-local
-HF_ADAPTER=<HF_USERNAME>/study-tutor-qwen2.5-1.5b-lora   # ou le dossier local de l'adaptateur
+HF_ADAPTER=Alinajjaa/study-tutor-qwen2.5-1.5b-lora   # ou le dossier local de l'adaptateur
 # HF_BASE_MODEL=Qwen/Qwen2.5-1.5B-Instruct               # valeur par défaut
 ```
 
