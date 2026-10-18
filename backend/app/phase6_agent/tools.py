@@ -51,6 +51,7 @@ class AgentContext:
     history: list[dict] = field(default_factory=list)
     message: str = ""  # message de l'étudiant (texte brut : jamais envoyé tel quel au LLM)
     on_tool: Callable[[str], None] | None = None  # suivi de la tâche de fond (outil en cours)
+    on_token: Callable[[str], None] | None = None  # streaming SSE de la réponse du tuteur (ask_course)
 
     @property
     def user_id(self) -> int:
@@ -244,7 +245,7 @@ def ask_course(ctx: AgentContext, question: str | None = None, course: str | Non
     weak = [p.concept for p in weak_points(ctx.session, ctx.user_id, course)]
     with track_tutor(course=course, level=ctx.level, source=SOURCE) as stats:
         result = answer(question, course, user_id=ctx.user_id, history=ctx.history[-2 * HISTORY_TURNS:],
-                        level=ctx.level, weak_concepts=weak, stats=stats)
+                        level=ctx.level, weak_concepts=weak, stats=stats, on_token=ctx.on_token)
     pages = sorted({s["page"] for s in result["sources"]})
     summary = (f"Réponse du cours trouvée (pages {', '.join(map(str, pages))})." if result["answered"]
                else "L'information n'est pas dans le cours.")

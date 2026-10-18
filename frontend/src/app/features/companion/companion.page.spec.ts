@@ -91,7 +91,7 @@ describe('CompanionPage (Assistant)', () => {
     const create = backend.expectOne(`${api}/conversations`);
     expect(create.request.body).toEqual({ course: 'Docker' });
     create.flush(conversation(4, 'Docker'));
-    const send = backend.expectOne(`${api}/companion/messages`);
+    const send = backend.expectOne(`${api}/companion/messages/stream`);
     expect(send.request.body).toEqual({ conversation_id: 4, course: 'Docker', message: 'Résume le cours.' });
 
     const job: CompanionJob = {
@@ -103,7 +103,7 @@ describe('CompanionPage (Assistant)', () => {
         tools: ['summarize'], fallback: false,
       },
     };
-    send.flush(job);
+    send.flush(`event: final\ndata: ${JSON.stringify(job)}\n\n`);
     await fixture.whenStable();
     expect(el.querySelector('.student .meta')?.textContent).toBe('Toi · Docker');
     expect(el.querySelector('#companion-course')).toHaveProperty('value', 'Docker');

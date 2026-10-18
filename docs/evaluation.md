@@ -307,6 +307,60 @@ Limites de cette comparaison : 3 runs par génération et un seul cours ; runs G
 Docker se construisaient sur la même machine (sans effet sur Groq, mais les embeddings locaux partageaient le
 CPU) ; qwen3.8-27b est un modèle « preview » chez Groq, ses résultats peuvent changer.
 
+### 2.9 Optimisation du temps de réponse (qwen2.5-7b-gpu, local)
+
+Trois étapes, mêmes jeux de test et même cours (Chapter1_Part_1). Les runs MLflow portent le tag `optim`
+(`avant` / `apres`) et `llm_concurrency` ; `time_to_first_token` est mesuré pour le tuteur (réponse en streaming).
+
+| Mesure | Avant GPU (qwen2.5:7b, 18 % CPU) | Après GPU (qwen2.5-7b-gpu, 100 % GPU) | Après optimisation du code |
+|---|---|---|---|
+| Examen complet (15 questions) | 158 s | 102 s | _à compléter_ |
+| — appels au LLM (dont génération) | 48,7 | 54 (30) | _à compléter_ |
+| Flashcards (10 cartes) | 129 s | 62 s | _à compléter_ |
+| — appels au LLM (dont génération) | 45 | 38 (16) | _à compléter_ |
+| Résumé du cours entier | 42 s | 28 s | _à compléter_ |
+| Tuteur : durée moyenne par question | 6,1 s | 4,0 s | _à compléter_ |
+| Tuteur : `time_to_first_token` | — | — | _à compléter_ |
+| Qualité : `taux_reussite` / `hit_3` / `refus_correct` | 0,98 / 1 / 1 | _à compléter_ | _à compléter (objectif : 1 / 1 / 1)_ |
+
+Commande du benchmark « après optimisation » (depuis `backend/`) :
+
+```powershell
+.\.venv\Scripts\python.exe -m app.phase5_evaluation.benchmark <email> Chapter1_Part_1 --n 3 --optim apres
+.\.venv\Scripts\python.exe -m app.phase5_evaluation.agent_eval <email> --optim apres
+```
+
+Ce qui a changé dans le code (détails dans [models.md](models.md) et [prompts.md](prompts.md)) :
+
+| Changement | Effet attendu |
+|---|---|
+| Examen par **tours** : jusqu'à 4 candidats par partie, **doublons écartés par embeddings avant la vérification**, **une vérification groupée** par type et par tour (repli unitaire si le JSON est invalide) | moins d'appels de vérification ; un doublon ne coûte plus d'appel au juge |
+| Questions acceptées **et** candidats déjà générés du tour rappelés au générateur (« ne pose pas une question déjà posée », 15 au plus) | moins de doublons, donc moins de générations perdues |
+| Flashcards : **vérification groupée** des cartes d'un tour, doublons écartés avant la vérification | moins d'appels de vérification |
+| Flashcards : **cache en mémoire des concepts** (par étudiant, cours et contenu) | deuxième paquet sur un cours : ≈ 11 appels d'extraction en moins |
+| Flashcards : **vecteurs des passages relus dans Qdrant** | plus de ré-encodage CPU des passages |
+| Schéma JSON des vérifications groupées à **exactement N réponses** | sans lui, qwen2.5 recopiait l'exemple de format (2 réponses) et la vérification groupée échouait |
+| **Parallélisme contrôlé** (`LLM_CONCURRENCY`, sémaphore partagé) : générations d'un tour, vérifications par type, cartes, blocs de concepts, sections du résumé | aucun effet en local (Ollama traite une requête à la fois, `LLM_CONCURRENCY=1`) ; gain avec Groq (`LLM_CONCURRENCY=3`) |
+| **Streaming SSE** du tuteur (`/api/ask/stream`, `/api/companion/messages/stream`) | la réponse s'affiche dès le premier fragment |
+| `localhost` → **127.0.0.1** et **keep_alive** | supprime ~2 s par nouvelle connexion (Windows, IPv6) ; modèle jamais déchargé |
+
+Mesures de contrôle faites pendant le développement (une seule génération de chaque, MLflow désactivé, donc
+**indicatives** : la dernière colonne du tableau doit venir du benchmark) :
+
+| Mesure de contrôle (18 octobre) | Résultat |
+|---|---|
+| Examen complet | 15/15 questions, 20/20 ; **32 appels (24 génération)** au lieu de 54 ; doublons 2 ; 5 vérifications groupées, 0 repli ; 104 s |
+| Flashcards, 1er paquet | 10/10 ; **30 appels (16 génération)** au lieu de 38 ; 3 vérifications groupées, 0 repli ; 26 vecteurs réutilisés ; **54 s** |
+| Flashcards, 2e paquet (cache) | 10/10 ; 24 appels ; 9 blocs de concepts repris du cache ; **52 s** |
+| Résumé | 5 sections ; 6 appels ; 27 s (inchangé : un seul appel à la fois en local) |
+| Tuteur : `time_to_first_token` | avec `localhost` : 0,1 à 2,5 s ; **avec 127.0.0.1 : 0,15 à 0,65 s** ; refus hors cours en 0,5 s au lieu de 2,6 s |
+
+Lecture : en local, la durée d'un examen dépend surtout des **jetons générés** (24 générations de 1 à 5 s, à
+≈ 37 jetons/s) ; les vérifications économisées ne coûtaient que 0,2 à 0,5 s chacune. Le nombre d'appels baisse
+nettement (−40 % pour l'examen, −20 % pour les flashcards), la durée de l'examen beaucoup moins. Pour aller plus
+loin en local : `OLLAMA_NUM_PARALLEL=2` avec `LLM_CONCURRENCY=2` (non testé, voir [models.md](models.md)), ou
+Groq.
+
 ## 3. Limites
 
 - **Jeux de test petits** : 14 questions pour le tuteur, 26 demandes pour l'agent, 3 examens et 3 paquets,

@@ -1,10 +1,14 @@
 """Routes du Study Companion : un message à l'agent (réponse directe ou tâche de fond) et résultats de quiz."""
+import queue
 import time
+from collections.abc import Callable
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
 from app.core.db import engine, get_session
+from app.core.sse import HEADERS as SSE_HEADERS, drain, sse_event
 from app.phase5_evaluation.tracking import agent_run, log_run_async
 from app.phase6_agent.graph import run_agent
 from app.phase6_agent.jobs import Job, JobError, jobs
@@ -27,8 +31,13 @@ SYNC_WAIT_S = 20.0  # au-delà, la route répond 202 et le frontend consulte la 
 HISTORY_MESSAGES = 6
 
 
-def process_message(job: Job, user_id: int, conversation_id: int, course: str | None, text: str) -> dict:
-    """Exécute l'agent puis enregistre la demande et les réponses (rien n'est enregistré si le LLM échoue)."""
+def process_message(job: Job, user_id: int, conversation_id: int, course: str | None, text: str,
+                    on_token: Callable[[str], None] | None = None,
+                    on_tool: Callable[[str], None] | None = None) -> dict:
+    """Exécute l'agent puis enregistre la demande et les réponses (rien n'est enregistré si le LLM échoue).
+
+    on_token / on_tool (flux SSE) : fragments de la réponse du tuteur et outil en cours, au fur et à mesure.
+    """
     with Session(engine) as session:
         user = session.get(User, user_id)
         conversation = session.get(Conversation, conversation_id)
@@ -38,7 +47,8 @@ def process_message(job: Job, user_id: int, conversation_id: int, course: str | 
         history = [{"role": m.role, "content": m.content} for m in previous[-HISTORY_MESSAGES:]]
         ctx = AgentContext(session=session, user=user, courses=list_user_courses(session, user_id),
                            selected_course=course, history=history, message=text,
-                           on_tool=lambda tool: setattr(job, "tool", tool))
+                           on_tool=lambda tool: (setattr(job, "tool", tool), on_tool and on_tool(tool)),
+                           on_token=on_token)
 
         start, error, result = time.perf_counter(), None, None
         try:
@@ -104,6 +114,53 @@ def send_message(body: CompanionRequest, response: Response, user: User = Depend
     elif job.status == "error":  # échec immédiat (LLM injoignable…) : même code que les autres routes
         raise HTTPException(job.error_status or 500, job.error)
     return job_out(job)
+
+
+@router.post("/companion/messages/stream")
+def stream_message(body: CompanionRequest, user: User = Depends(get_current_user),
+                   session: Session = Depends(get_session)):
+    """Comme POST /api/companion/messages, en Server-Sent Events :
+
+    - « start » {job_id, conversation_id} : la tâche est lancée (si le flux est coupé, le frontend peut consulter
+      GET /api/companion/jobs/{job_id}, la tâche continue et enregistre la réponse) ;
+    - « tool » {tool} : outil en cours ; « token » {text} : fragment de la réponse du tuteur ;
+    - « final » : même contenu que GET /api/companion/jobs/{id} terminé (messages enregistrés, réponse validée) ;
+    - « error » {detail, status}.
+    """
+    if body.course:
+        require_course(session, user.id, body.course)
+    if body.conversation_id is None:
+        conversation = Conversation(user_id=user.id, course=body.course)
+        session.add(conversation)
+        session.commit()
+        session.refresh(conversation)
+    else:
+        conversation = get_owned_conversation(body.conversation_id, user, session)
+
+    user_id, conversation_id = user.id, conversation.id
+    events: queue.Queue = queue.Queue()
+
+    def work(job: Job) -> dict:
+        try:
+            return process_message(job, user_id, conversation_id, body.course, body.message,
+                                   on_token=lambda text: events.put(("token", {"text": text})),
+                                   on_tool=lambda tool: events.put(("tool", {"tool": tool})))
+        finally:
+            events.put(("done", None))
+
+    job = jobs.submit(user_id, work)
+
+    def stream():
+        yield sse_event("start", {"job_id": job.id, "conversation_id": conversation_id})
+        yield from drain(events)
+        job.wait(30)  # le statut de la tâche est écrit juste après la fin de work()
+        if job.status == "done":
+            yield sse_event("final", job_out(job).model_dump(mode="json"))
+        else:
+            yield sse_event("error", {"detail": job.error or "L'assistant n'a pas pu répondre. Réessaie.",
+                                      "status": job.error_status or 500})
+
+    return StreamingResponse(stream(), media_type="text/event-stream", headers=SSE_HEADERS)
 
 
 @router.get("/companion/jobs/{job_id}")

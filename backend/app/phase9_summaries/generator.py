@@ -8,6 +8,7 @@ import logging
 
 from pydantic import BaseModel, ValidationError
 
+from app.core.concurrency import concurrency, parallel_map
 from app.core.privacy import mask_pii
 from app.phase1_llm.llm import chat
 from app.phase2_embeddings.embeddings import embed_query
@@ -24,6 +25,7 @@ MIN_PASSAGE_CHARS = 60   # en dessous : titre ou bout de découpage, sans conten
 SECTION_SIZE = 6         # passages consécutifs résumés ensemble
 TOPIC_PASSAGES = 6       # passages retrouvés pour expliquer un thème
 ATTEMPTS = 2             # une deuxième chance si la sortie est rejetée
+_TODO = object()         # section pas encore résumée (exécution séquentielle)
 
 SYSTEM_PROMPT = (
     "Tu es un enseignant qui rédige des fiches de révision en français, uniquement à partir du cours fourni. "
@@ -131,9 +133,21 @@ def summarize_course(course: str, user_id: int | None) -> SummaryContent:
         raise LookupError(f"Le cours « {course} » est introuvable ou vide.")
     record_value("passages", sum(len(g) for g in groups))
 
+    # Étape « map ». LLM_CONCURRENCY = 1 : section par section, chacune avec les titres déjà utilisés (comportement
+    # historique). > 1 : toutes les sections en parallèle, puis seules celles dont le titre répète un titre
+    # précédent sont refaites, une par une, avec la consigne « titre différent ».
+    if concurrency() > 1:
+        drafts = parallel_map(summarize_section, groups)
+    else:
+        drafts = [_TODO] * len(groups)
     sections: list[SummarySection] = []
-    for context in groups:
-        draft = summarize_section(context, [s.title for s in sections])
+    for context, draft in zip(groups, drafts):
+        used_titles = [s.title for s in sections]
+        if draft is _TODO:
+            draft = summarize_section(context, used_titles)
+        elif draft is not None and draft.title.strip().lower() in {t.strip().lower() for t in used_titles}:
+            record("sections_titre_refait")
+            draft = summarize_section(context, used_titles)
         if draft is None:
             logger.warning("Section ignorée (pages %s) : résumé rejeté deux fois",
                            sorted({c["page"] for c in context}))

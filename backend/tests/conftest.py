@@ -10,6 +10,9 @@ os.environ["DATABASE_URL"] = f"sqlite:///{(_TMP / 'test.db').as_posix()}"
 os.environ["JWT_SECRET"] = "secret-de-test-uniquement-0123456789abcdef"
 os.environ["STORAGE_DIR"] = str(_TMP / "storage")
 os.environ["MLFLOW_ENABLED"] = "false"  # activé seulement dans les tests MLflow
+# Aucun test ne doit joindre un vrai LLM : un appel non simulé échoue tout de suite (port fermé)
+os.environ["LLM_BASE_URL"] = "http://127.0.0.1:9/v1"
+os.environ.pop("LLM_CONCURRENCY", None)
 os.environ["MLFLOW_TRACKING_URI"] = f"sqlite:///{(_TMP / 'mlruns' / 'mlflow.db').as_posix()}"
 
 import pytest  # noqa: E402
@@ -45,12 +48,23 @@ def fake_services(monkeypatch):
     yield
 
 
+@pytest.fixture(autouse=True)
+def empty_concept_cache():
+    """Le cache des concepts (flashcards) est propre au processus : vidé entre deux tests."""
+    from app.phase7_flashcards.generator import clear_concept_cache
+
+    clear_concept_cache()
+    yield
+    clear_concept_cache()
+
+
 @pytest.fixture
 def llm(monkeypatch) -> FakeLLM:
     from app.phase3_rag import rag
 
     fake = FakeLLM()
     monkeypatch.setattr(rag, "chat", fake)
+    monkeypatch.setattr(rag, "chat_stream", fake.stream)  # tuteur en streaming (SSE, benchmark)
     return fake
 
 

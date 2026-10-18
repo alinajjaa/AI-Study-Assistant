@@ -25,6 +25,14 @@ class FakeLLM:
         self.calls.append((system, user))
         return self.reply
 
+    def stream(self, system: str, user: str, on_token, **kwargs) -> str:
+        """Remplace phase1_llm.chat_stream : même réponse, transmise en deux fragments."""
+        text = self(system, user, **kwargs)
+        middle = len(text) // 2
+        on_token(text[:middle])
+        on_token(text[middle:])
+        return text
+
 
 def register(client: TestClient, email: str = "etudiant@example.com", password: str = "motdepasse123",
              level: str = "intermediaire") -> dict:

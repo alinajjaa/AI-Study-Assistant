@@ -125,8 +125,18 @@ export interface QuizResultResponse {
   message: StoredMessage;
 }
 
+/** Événements de POST /api/companion/messages/stream (Server-Sent Events). */
+export type CompanionStreamEvent =
+  | { event: 'start'; data: { job_id: string; conversation_id: number } }
+  | { event: 'tool'; data: { tool: string } }
+  | { event: 'token'; data: { text: string } }
+  | { event: 'final'; data: CompanionJob }
+  | { event: 'error'; data: { detail: string; status: number } };
+
 /** Suivi d'une demande en cours (indicateur « L'assistant travaille… »). */
 export interface CompanionProgress {
   tool: string | null;
   startedAt: number;
+  /** Réponse du tuteur reçue au fur et à mesure (non validée : remplacée par la réponse finale). */
+  draft?: string;
 }

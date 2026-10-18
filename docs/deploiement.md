@@ -67,8 +67,16 @@ par jour** (en-têtes `x-ratelimit-*`). La documentation indique aussi un plafon
   message clair si la limite persiste.
 - Les attentes sont comptées dans MLflow (`attentes_limite_debit`).
 
-Conséquence pratique : avec 8 000 jetons par minute, un examen complet (≈ 50 appels) prend plusieurs minutes
+Conséquence pratique : avec 8 000 jetons par minute, un examen complet (≈ 40 appels) prend plusieurs minutes
 même si chaque appel ne dure qu'une seconde. Le proxy nginx accepte donc des requêtes de 20 minutes.
+
+**Appels simultanés** : avec Groq, `LLM_CONCURRENCY` vaut 3 par défaut (les appels indépendants d'un examen, d'un
+paquet de flashcards ou d'un résumé partent en parallèle, sous un sémaphore partagé). Plus haut, les attentes 429
+annulent le gain sur l'offre gratuite. Les attentes 429 se font hors du sémaphore : les autres appels continuent.
+
+**Streaming** : la page Assistant reçoit la réponse du tuteur en Server-Sent Events. nginx ne met pas ce flux en
+tampon (en-tête `X-Accel-Buffering: no` envoyé par le backend), et des commentaires `: keepalive` toutes les 15 s
+gardent la connexion ouverte pendant les générations longues.
 
 ## 2. Docker en local
 

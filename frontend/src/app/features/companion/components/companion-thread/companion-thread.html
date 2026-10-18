@@ -24,6 +24,10 @@
           <div class="assistant__body">
             @switch (message.status) {
               @case ('pending') {
+                @if (draft(message); as text) {
+                  <!-- Réponse du tuteur reçue au fur et à mesure ; remplacée par la réponse validée (sources, [p.X]) -->
+                  <p class="draft" aria-busy="true">{{ text }}<span class="draft__caret" aria-hidden="true"></span></p>
+                }
                 <div class="working">
                   <app-loader variant="dots" [label]="working(message)" />
                   @if (isLong(message)) {

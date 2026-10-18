@@ -1,10 +1,11 @@
 import logging
+from collections.abc import Callable
 import re
 import unicodedata
 
 from app.core.config import TOP_K
 from app.core.privacy import mask_pii
-from app.phase1_llm.llm import chat
+from app.phase1_llm.llm import chat, chat_stream
 from app.phase2_embeddings.embeddings import embed_query
 from app.phase2_embeddings.vectorstore import search
 from app.phase5_evaluation.stats import GenerationStats, collecting, record_value
@@ -150,24 +151,28 @@ def build_user_prompt(hits: list[dict], question: str, history: list[dict] | Non
 
 def answer(question: str, course: str | None = None, k: int = TOP_K, *, user_id: int | None,
            history: list[dict] | None = None, level: str | None = None,
-           weak_concepts: list[str] | None = None, stats: GenerationStats | None = None) -> dict:
+           weak_concepts: list[str] | None = None, stats: GenerationStats | None = None,
+           on_token: Callable[[str], None] | None = None) -> dict:
     """Question → chunks pertinents (Qdrant, cours de l'étudiant uniquement) → LLM → réponse + sources.
 
     history : échanges précédents de la conversation [{"role": "user"|"assistant", "content": "..."}].
     level : niveau de l'étudiant (debutant, intermediaire, avance) pour adapter l'explication.
     weak_concepts : ses points faibles ; ceux dont parle la question sont signalés par le tuteur.
     stats (optionnel, phase 5) : durée, passages retrouvés, score maximal, réponse trouvée, sources.
+    on_token (optionnel) : reçoit la réponse au fur et à mesure (streaming SSE). La réponse renvoyée, ses sources
+    et la détection « hors du cours » sont calculées sur le texte complet, comme sans streaming.
     """
     with collecting(stats):
         result = _answer(question, course, k, user_id=user_id, history=history, level=level,
-                         weak_concepts=weak_concepts)
+                         weak_concepts=weak_concepts, on_token=on_token)
         record_value("reponse_trouvee", 1 if result["answered"] else 0)
         record_value("sources", len(result["sources"]))
         return result
 
 
 def _answer(question: str, course: str | None, k: int, *, user_id: int | None, history: list[dict] | None,
-            level: str | None, weak_concepts: list[str] | None) -> dict:
+            level: str | None, weak_concepts: list[str] | None,
+            on_token: Callable[[str], None] | None = None) -> dict:
     history = (history or [])[-2 * HISTORY_TURNS:]
     query = search_query(question, history)
     hits = search(embed_query(query), k, course, user_id=user_id)
@@ -186,7 +191,7 @@ def _answer(question: str, course: str | None, k: int, *, user_id: int | None, h
     logger.info("Question transmise au LLM : %s", mask_pii(question))
     system = build_system_prompt(has_history=bool(history), level=level,
                                  weak_concepts=touched_concepts(query, weak_concepts or []))
-    text = chat(system, user_prompt)
+    text = chat_stream(system, user_prompt, on_token) if on_token else chat(system, user_prompt)
 
     # Si le tuteur dit que l'info n'est pas dans le cours, aucune source n'a été utilisée
     if NOT_FOUND.lower().rstrip(".") in text.lower():

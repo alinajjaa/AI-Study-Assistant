@@ -7,6 +7,7 @@ le comportement des générateurs est exactement le même.
 
 Uniquement des nombres : jamais de texte de question, d'email ni de nom.
 """
+import threading
 import time
 from collections import Counter
 from collections.abc import Iterator
@@ -22,15 +23,19 @@ class GenerationStats:
     counters: Counter = field(default_factory=Counter)
     values: dict[str, float] = field(default_factory=dict)  # mesures ponctuelles (score max, passages…)
     duration_s: float | None = None
+    # Appels au LLM en parallèle (LLM_CONCURRENCY > 1) : plusieurs threads incrémentent le même collecteur
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
 
     def add(self, name: str, n: float = 1) -> None:
-        self.counters[name] += n
+        with self._lock:
+            self.counters[name] += n
 
     def get(self, name: str) -> float:
         return self.counters.get(name, 0)
 
     def set(self, name: str, value: float) -> None:
-        self.values[name] = value
+        with self._lock:
+            self.values[name] = value
 
     def reject(self, cause: str, kind: str | None = None) -> None:
         """Un élément écarté : compté au total de la cause, et par type si le type est connu."""

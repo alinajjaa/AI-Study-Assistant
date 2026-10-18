@@ -101,8 +101,18 @@ def _reject_rates(stats: GenerationStats) -> dict[str, float]:
     return {f"taux_rejet_{cause}": _ratio(stats.get(f"rejets_{cause}"), attempts) for cause in REJECT_CAUSES}
 
 
+# Tags ajoutés à tous les runs du processus (benchmark : optim=avant|apres). Jamais de donnée personnelle.
+_run_tags: dict[str, str] = {}
+
+
+def set_run_tags(**tags: str) -> None:
+    """Ex. set_run_tags(optim="apres") : ce tag est ajouté à chaque run enregistré ensuite par ce processus."""
+    _run_tags.update({k: str(v) for k, v in tags.items()})
+
+
 def _tags(source: str, error: Exception | None) -> dict:
-    tags = {"source": source, "statut": "echec" if error else "ok"}
+    tags = {"source": source, "statut": "echec" if error else "ok",
+            "llm_concurrency": str(config.LLM_CONCURRENCY), **_run_tags}
     if error is not None:
         tags["erreur"] = type(error).__name__  # le type seulement, jamais le message
     return tags

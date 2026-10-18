@@ -7,8 +7,9 @@ from openai import (
     AuthenticationError, BadRequestError, RateLimitError, APIStatusError,
 )
 from app.core import config
+from app.core.concurrency import llm_slot
 from app.core.config import LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, LLM_TIMEOUT
-from app.phase5_evaluation.stats import record
+from app.phase5_evaluation.stats import record, record_value
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -70,12 +71,22 @@ def rate_limit_message(error: RateLimitError, wait: float | None = None) -> str:
     return f"Limite de débit du fournisseur LLM atteinte (trop de requêtes ou de jetons par minute).{later}."
 
 
+def ollama_options() -> dict:
+    """Paramètres propres à Ollama (keep_alive : le modèle reste chargé en mémoire GPU entre deux appels)."""
+    if config.IS_OLLAMA and config.LLM_KEEP_ALIVE:
+        value = config.LLM_KEEP_ALIVE
+        return {"extra_body": {"keep_alive": int(value) if value.lstrip("-").isdigit() else value}}
+    return {}
+
+
 def _create(**kwargs):
-    """Appel au LLM ; sur une erreur 429, attend le délai demandé puis réessaie (LLM_RATE_LIMIT_RETRIES fois)."""
+    """Appel au LLM (LLM_CONCURRENCY appels simultanés au plus) ; sur une erreur 429, attend le délai demandé
+    puis réessaie (LLM_RATE_LIMIT_RETRIES fois). L'attente se fait hors du sémaphore : les autres appels continuent."""
     retries = max(0, config.LLM_RATE_LIMIT_RETRIES)
     for attempt in range(retries + 1):
         try:
-            return client.chat.completions.create(**kwargs)
+            with llm_slot():
+                return client.chat.completions.create(**kwargs, **ollama_options())
         except RateLimitError as e:
             wait = retry_after(e)
             if wait is None:
@@ -183,6 +194,58 @@ def chat(
     if not content or not content.strip():
         raise LLMError("Le modèle a renvoyé une réponse vide. Réessaie.")
     return content
+
+
+def chat_stream(system: str, user: str, on_token, max_tokens: int = 1024, temperature: float = 0.3) -> str:
+    """Comme chat() en texte libre, mais transmet la réponse au fur et à mesure : on_token(fragment).
+
+    Renvoie le texte complet (validé ensuite par l'appelant, comme une réponse de chat()). Mesure le délai avant
+    le premier fragment (time_to_first_token, en secondes) dans le collecteur actif (phase 5). Mêmes erreurs
+    que chat() (LLMError), même retry 429 (avant le début du flux). LLM_PROVIDER=hf-local : pas de flux, le
+    texte complet est transmis en une fois.
+    """
+    if config.LLM_PROVIDER == "hf-local":
+        text = chat(system, user, max_tokens=max_tokens, temperature=temperature)
+        on_token(text)
+        return text
+    if not LLM_API_KEY:
+        raise LLMError("Clé API du LLM absente : renseigne LLM_API_KEY dans le fichier .env.")
+
+    record("appels_llm")
+    start = time.perf_counter()
+    parts: list[str] = []
+    try:
+        stream = _create(model=LLM_MODEL, messages=[{"role": "system", "content": system},
+                                                    {"role": "user", "content": user}],
+                         max_tokens=max_tokens, temperature=temperature, stream=True)
+        with llm_slot():  # le flux occupe le LLM jusqu'au dernier fragment
+            for chunk in stream:
+                delta = chunk.choices[0].delta.content if chunk.choices else None
+                if not delta:
+                    continue
+                if not parts:
+                    ttft = round(time.perf_counter() - start, 3)
+                    record_value("time_to_first_token", ttft)
+                    logger.info("Premier fragment du LLM après %.2f s", ttft)
+                parts.append(delta)
+                on_token(delta)
+    except LLMError:
+        raise
+    except APITimeoutError as e:
+        raise LLMError(f"Le modèle n'a pas répondu en {int(LLM_TIMEOUT)} s (timeout). Réessaie.") from e
+    except APIConnectionError as e:
+        raise LLMError("Impossible de joindre le serveur du LLM. Vérifie qu'Ollama est lancé.") from e
+    except AuthenticationError as e:
+        raise LLMError("Clé API du LLM invalide.") from e
+    except RateLimitError as e:
+        raise LLMError(rate_limit_message(e)) from e
+    except APIStatusError as e:
+        raise LLMError(f"Le fournisseur LLM a renvoyé une erreur (code {e.status_code}).") from e
+
+    text = "".join(parts)
+    if not text.strip():
+        raise LLMError("Le modèle a renvoyé une réponse vide. Réessaie.")
+    return text
 
 
 if __name__ == "__main__":

@@ -116,6 +116,11 @@ ollama pull qwen2.5:7b
 ollama run qwen2.5:7b "Bonjour"   # test rapide, puis /bye
 ```
 
+Pour un GPU de 6 Go, créer le modèle `qwen2.5-7b-gpu` (100 % GPU, contexte de 4 096 jetons) et régler les
+variables du serveur Ollama (`OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0`, `OLLAMA_KEEP_ALIVE=-1`) :
+voir [docs/models.md](docs/models.md#ollama-sur-gpu-6-go--configuration-et-mesures). Génération : 24,5 → 37,8
+jetons/s.
+
 L'API compatible OpenAI est alors disponible sur `http://localhost:11434/v1`.
 
 ### 4. Backend (FastAPI) et environnement virtuel
@@ -155,13 +160,16 @@ Fichier `backend/.env` (modèle : [backend/.env.example](backend/.env.example)).
 
 | Variable | Défaut | Rôle |
 |---|---|---|
-| `LLM_BASE_URL` | `http://localhost:11434/v1` | serveur LLM compatible OpenAI (Ollama, Groq, OpenAI) |
+| `LLM_BASE_URL` | `http://127.0.0.1:11434/v1` | serveur LLM compatible OpenAI (Ollama, Groq, OpenAI) ; `localhost` est remplacé par `127.0.0.1` (`LLM_FORCE_IPV4`) |
 | `LLM_API_KEY` | `ollama` | clé du fournisseur (non vide ; Ollama n'en vérifie pas la valeur) |
-| `LLM_MODEL` | `qwen2.5:3b` (mettre `qwen2.5:7b`) | modèle utilisé |
+| `LLM_MODEL` | `qwen2.5:3b` (mettre `qwen2.5-7b-gpu`, voir [docs/models.md](docs/models.md)) | modèle utilisé |
 | `GROQ_API_KEY` | vide | clé Groq ; prioritaire sur `LLM_API_KEY` quand `LLM_BASE_URL` pointe vers Groq |
 | `LLM_TIMEOUT` | `120` | secondes avant d'abandonner un appel |
 | `LLM_JSON_MODE` | `json_schema` | `json_object` : force ce mode (repli automatique sinon) |
 | `LLM_RATE_LIMIT_RETRIES` / `LLM_RATE_LIMIT_MAX_WAIT` | `4` / `60` | erreurs 429 : nouveaux essais et attente maximale (s) |
+| `LLM_CONCURRENCY` | `1` (Ollama), `3` (Groq) | appels au LLM simultanés ; `1` = exécution séquentielle |
+| `LLM_KEEP_ALIVE` | `-1` | Ollama : le modèle reste en mémoire GPU (`-1` = toujours) |
+| `LLM_FORCE_IPV4` | `true` | remplace `localhost` par `127.0.0.1` (évite ~2 s par connexion sous Windows) |
 | `LLM_PROVIDER` | `openai` | `hf-local` : démonstration du modèle affiné (optionnel) |
 | `HF_BASE_MODEL` / `HF_ADAPTER` | `Qwen/Qwen2.5-1.5B-Instruct` / vide | modèle de base et adaptateur LoRA pour `hf-local` |
 | `HF_TOKEN` | vide | jeton Hugging Face en lecture (optionnel) |

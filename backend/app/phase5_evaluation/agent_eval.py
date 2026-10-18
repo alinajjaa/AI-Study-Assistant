@@ -78,6 +78,7 @@ def main(argv: list[str] | None = None, llm=None) -> dict:
     parser = argparse.ArgumentParser(description="Taux de bon outil choisi par l'agent Study Companion.")
     parser.add_argument("email")
     parser.add_argument("--dataset", type=Path, default=DATASET)
+    parser.add_argument("--optim", choices=["avant", "apres"], default="apres", help="tag MLflow optim")
     args = parser.parse_args(argv)
 
     init_db()
@@ -95,7 +96,8 @@ def main(argv: list[str] | None = None, llm=None) -> dict:
 
     params = {"modele_llm": config.LLM_MODEL, "jeu": args.dataset.name, "demandes": len(rows),
               "cours": len(courses), "niveau": user.level}
-    run_id = log_run("agent_eval", params, metrics, {"source": "evaluation"})
+    run_id = log_run("agent_eval", params, metrics, {"source": "evaluation", "optim": args.optim,
+                                                     "llm_concurrency": str(config.LLM_CONCURRENCY)})
 
     RESULTS.mkdir(parents=True, exist_ok=True)
     out = RESULTS / f"agent_eval_{datetime.now():%Y%m%d_%H%M%S}.csv"

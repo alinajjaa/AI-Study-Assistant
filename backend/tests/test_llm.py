@@ -211,3 +211,18 @@ def test_qdrant_integre_en_memoire():
     env = {"QDRANT_PATH": ":memory:"}
     out = _config(env, "__import__('app.phase2_embeddings.vectorstore', fromlist=['client']).client._client.__class__.__name__")
     assert out == "QdrantLocal"
+
+
+def test_localhost_remplace_par_ipv4():
+    env = {"LLM_BASE_URL": "http://localhost:11434/v1"}
+    assert _config(env, "config.LLM_BASE_URL") == "http://127.0.0.1:11434/v1"
+    assert _config({**env, "LLM_FORCE_IPV4": "false"}, "config.LLM_BASE_URL") == "http://localhost:11434/v1"
+    assert _config({"LLM_BASE_URL": "https://api.groq.com/openai/v1"}, "config.LLM_BASE_URL") == \
+        "https://api.groq.com/openai/v1"
+
+
+def test_concurrence_par_defaut_selon_le_fournisseur():
+    assert _config({"LLM_BASE_URL": "http://localhost:11434/v1"}, "config.LLM_CONCURRENCY") == "1"
+    assert _config({"LLM_BASE_URL": "https://api.groq.com/openai/v1"}, "config.LLM_CONCURRENCY") == "3"
+    assert _config({"LLM_BASE_URL": "https://api.groq.com/openai/v1", "LLM_CONCURRENCY": "2"},
+                   "config.LLM_CONCURRENCY") == "2"

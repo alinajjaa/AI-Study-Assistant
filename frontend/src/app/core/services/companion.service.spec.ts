@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpEventType, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -100,14 +100,32 @@ describe('CompanionService', () => {
     return firstValueFrom(service.send(message, course));
   }
 
-  it('réponse directe : les messages enregistrés remplacent le message en attente', async () => {
+  function sse(event: string, data: unknown): string {
+    return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  }
+
+  const STREAM = `${api}/companion/messages/stream`;
+  const START = sse('start', { job_id: 'abc', conversation_id: 5 });
+
+  it('flux : outil et fragments affichés au fur et à mesure, puis la réponse finale remplace le brouillon', async () => {
     const sent = startInConversation5('Un quiz stp', 'CNN');
+    const pendingId = conversations.messages()[0].id;
     expect(conversations.messages()[0].status).toBe('pending');
     expect(service.busy()).toBe(true);
 
-    const req = backend.expectOne(`${api}/companion/messages`);
+    const req = backend.expectOne(STREAM);
     expect(req.request.body).toEqual({ conversation_id: 5, course: 'CNN', message: 'Un quiz stp' });
-    req.flush(job('done', { exchange: exchange() }));
+    expect(req.request.reportProgress).toBe(true);
+    const partial = START + sse('tool', { tool: 'ask_course' }) + sse('token', { text: 'Le pooling ' });
+    req.event({ type: HttpEventType.DownloadProgress, loaded: partial.length, partialText: partial });
+    expect(service.progress().get(pendingId)).toMatchObject({ tool: 'ask_course', draft: 'Le pooling ' });
+
+    const more = partial + sse('token', { text: 'réduit' }) + 'event: token\ndata: {"te';
+    req.event({ type: HttpEventType.DownloadProgress, loaded: more.length, partialText: more });
+    expect(service.progress().get(pendingId)?.draft).toBe('Le pooling réduit'); // bloc incomplet : attendu
+
+    req.flush(more.slice(0, partial.length + sse('token', { text: 'réduit' }).length) +
+      sse('final', job('done', { exchange: exchange() })));
     await sent;
 
     const [message] = conversations.messages();
@@ -116,17 +134,16 @@ describe('CompanionService', () => {
     expect(service.busy()).toBe(false);
   });
 
-  it('tâche de fond : consulte la tâche jusqu’à la fin et affiche l’outil en cours', async () => {
+  it('flux coupé après son début : consulte la tâche jusqu’à la fin', async () => {
     vi.useFakeTimers();
     const sent = startInConversation5('Un quiz stp', 'CNN');
     const pendingId = conversations.messages()[0].id;
-    backend.expectOne(`${api}/companion/messages`).flush(job('running', { tool: null }), { status: 202, statusText: 'Accepted' });
-    expect(service.progress().get(pendingId)?.tool).toBeNull();
+    const req = backend.expectOne(STREAM);
+    req.event({ type: HttpEventType.DownloadProgress, loaded: START.length, partialText: START });
+    req.error(new ProgressEvent('error'));
 
-    vi.advanceTimersByTime(POLL_MS);
     backend.expectOne(`${api}/companion/jobs/abc`).flush(job('running'));
     expect(service.progress().get(pendingId)?.tool).toBe('generate_quiz');
-
     vi.advanceTimersByTime(POLL_MS);
     backend.expectOne(`${api}/companion/jobs/abc`).flush(job('done', { exchange: exchange() }));
     await sent;
@@ -134,16 +151,23 @@ describe('CompanionService', () => {
     expect(service.progress().size).toBe(0);
   });
 
-  it('tâche en erreur : le message en attente affiche l’erreur', async () => {
+  it('erreur de l’assistant : le message en attente affiche l’erreur, sans nouvel essai', async () => {
     const sent = startInConversation5('Un quiz stp', 'CNN');
-    backend.expectOne(`${api}/companion/messages`).flush(job('error', { error: 'Ollama est arrêté.' }));
+    backend.expectOne(STREAM).flush(START + sse('error', { detail: 'Ollama est arrêté.', status: 503 }));
     await expect(sent).rejects.toThrow('Ollama est arrêté.');
     expect(conversations.messages()[0]).toMatchObject({ status: 'error', error: 'Ollama est arrêté.' });
   });
 
+  it('échec avant le début du flux : erreur affichée', async () => {
+    const sent = startInConversation5('Un quiz stp', 'CNN');
+    backend.expectOne(STREAM).flush({ detail: 'Cours introuvable.' }, { status: 404, statusText: 'Not Found' });
+    await expect(sent).rejects.toBeTruthy();
+    expect(conversations.messages()[0].status).toBe('error');
+  });
+
   it('score du quiz : enregistré puis reporté dans la réponse affichée', async () => {
     const sent = startInConversation5('Un quiz stp', 'CNN');
-    backend.expectOne(`${api}/companion/messages`).flush(job('done', { exchange: exchange() }));
+    backend.expectOne(STREAM).flush(START + sse('final', job('done', { exchange: exchange() })));
     await sent;
 
     const saved = firstValueFrom(service.saveQuizResult(21, ['A']));

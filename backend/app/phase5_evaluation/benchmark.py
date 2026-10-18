@@ -29,7 +29,7 @@ from app.phase2_embeddings.vectorstore import search
 from app.phase3_rag.rag import answer
 from app.phase4_exam.generator import generate_exam
 from app.phase5_evaluation.stats import GenerationStats
-from app.phase5_evaluation.tracking import exam_run, flashcards_run, log_run, summary_run, tutor_run
+from app.phase5_evaluation.tracking import exam_run, flashcards_run, log_run, set_run_tags, summary_run, tutor_run
 from app.phase7_flashcards.generator import generate_flashcards
 from app.phase8_personal.courses import get_user_course
 from app.phase8_personal.models import User
@@ -118,7 +118,9 @@ def run_tutor(course: str, user: User) -> list[dict]:
     for i, item in enumerate(dataset, start=1):
         stats, result, error = GenerationStats(), None, None
         try:
-            result = answer(item["question"], course, user_id=user.id, level=user.level, stats=stats)
+            # Réponse en streaming (comme la page Assistant) : mesure aussi time_to_first_token
+            result = answer(item["question"], course, user_id=user.id, level=user.level, stats=stats,
+                            on_token=lambda _fragment: None)
         except Exception as e:  # noqa: BLE001
             error = e
         pages = {s["page"] for s in result["sources"]} if result else set()
@@ -217,7 +219,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-flashcards", action="store_true")
     parser.add_argument("--skip-tutor", action="store_true")
     parser.add_argument("--skip-summary", action="store_true")
+    parser.add_argument("--optim", choices=["avant", "apres"], default="apres",
+                        help="tag MLflow optim : avant ou après l'optimisation du code (défaut : apres)")
     args = parser.parse_args(argv)
+    set_run_tags(optim=args.optim)
     logging.basicConfig(level=logging.WARNING, format="  %(levelname)s : %(message)s")
 
     init_db()

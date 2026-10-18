@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel, Field
 from sqlmodel import Session
 from app.core.db import get_session
+from app.core.sse import stream_work
 from app.phase2_embeddings.ingest import ingest_pdf
 from app.phase2_embeddings.vectorstore import delete_course
 from app.phase3_rag.rag import answer
@@ -68,3 +69,21 @@ def ask(body: AskRequest, user: User = Depends(get_current_user), session: Sessi
     with track_tutor(course=body.course, level=user.level) as stats:
         return answer(body.question, body.course, user_id=user.id, level=user.level, weak_concepts=weak,
                       stats=stats)
+
+
+@router.post("/ask/stream")
+def ask_stream(body: AskRequest, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+    """Comme /api/ask, en Server-Sent Events : fragments « token » au fur et à mesure, puis « final » avec la
+    réponse validée, les sources, « answered » et le délai avant le premier fragment (time_to_first_token)."""
+    if body.course:
+        require_course(session, user.id, body.course)
+    weak = [p.concept for p in weak_points(session, user.id, body.course or None)]
+    user_id, level = user.id, user.level  # la session de la requête est fermée pendant le flux
+
+    def work(on_token) -> dict:
+        with track_tutor(course=body.course, level=level) as stats:
+            result = answer(body.question, body.course, user_id=user_id, level=level, weak_concepts=weak,
+                            stats=stats, on_token=on_token)
+        return {**result, "time_to_first_token": stats.values.get("time_to_first_token")}
+
+    return stream_work(work)

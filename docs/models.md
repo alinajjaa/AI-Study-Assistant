@@ -40,11 +40,65 @@ si un modèle le refuse, et gère les erreurs 429 de l'offre gratuite (attente p
 si la limite persiste). Détails, mesures et comparaison avec qwen2.5:7b : [deploiement.md](deploiement.md) et
 [evaluation.md](evaluation.md#28-qwen257b-en-local-contre-qwenqwen38-27b-sur-groq).
 
+### Ollama sur GPU 6 Go : configuration et mesures
+
+Le modèle local est `qwen2.5-7b-gpu`, créé à partir de qwen2.5:7b avec ce Modelfile (fichier `Modelfile`) :
+
+```
+FROM qwen2.5:7b
+PARAMETER num_gpu 99
+PARAMETER num_ctx 4096
+```
+
+```powershell
+ollama create qwen2.5-7b-gpu -f Modelfile
+```
+
+- `num_gpu 99` : toutes les couches du modèle sur le GPU (sans ce réglage, Ollama en laissait une partie sur le
+  CPU) ;
+- `num_ctx 4096` : contexte de 4 096 jetons, suffisant pour les prompts du projet (≈ 600 à 1 500 jetons) ; un
+  contexte plus grand ferait déborder le cache KV hors du GPU.
+
+Variables d'environnement du serveur Ollama (variables utilisateur Windows, puis redémarrer Ollama) :
+
+| Variable | Valeur | Effet |
+|---|---|---|
+| `OLLAMA_FLASH_ATTENTION` | `1` | attention plus rapide et plus économe en mémoire |
+| `OLLAMA_KV_CACHE_TYPE` | `q8_0` | cache KV quantifié en 8 bits : environ deux fois moins de mémoire, perte de qualité négligeable |
+| `OLLAMA_KEEP_ALIVE` | `-1` | le modèle reste chargé en mémoire GPU (pas de rechargement de plusieurs secondes après 5 min d'inactivité) |
+
+L'application envoie aussi `keep_alive` à chaque appel (`LLM_KEEP_ALIVE`, `-1` par défaut, seulement vers Ollama,
+paramètre inconnu de Groq) : le modèle reste chargé même si la variable du serveur n'est pas réglée. Vérifié :
+`ollama ps` affiche `UNTIL Forever`.
+
+Mesures (RTX 4050 Laptop, 6 Go) :
+
+| Mesure | qwen2.5:7b par défaut | qwen2.5-7b-gpu + variables ci-dessus |
+|---|---|---|
+| Vitesse de génération (`eval rate`) | 24,5 jetons/s | **37,8 jetons/s** |
+| Répartition CPU / GPU (`ollama ps`) | 18 % / 82 % | **100 % GPU** |
+| Mémoire | 5,2 Go | **4,6 Go** |
+
+**Piège Windows mesuré : `localhost` coûte 2 s par connexion.** `localhost` se résout d'abord en `::1` (IPv6),
+alors qu'Ollama n'écoute que sur `127.0.0.1:11434`. Chaque nouvelle connexion attend alors environ 2,1 s avant de
+basculer en IPv4. Un appel en streaming ne réutilise pas sa connexion, donc chaque réponse du tuteur payait ces
+2 s (time-to-first-token de 2,2 s, contre 0,05 à 0,15 s avec `127.0.0.1`). L'application remplace donc `localhost`
+par `127.0.0.1` dans `LLM_BASE_URL` (`LLM_FORCE_IPV4=true` par défaut), et `.env.example` utilise `127.0.0.1`.
+
+**Requêtes simultanées** : avec la configuration par défaut (`OLLAMA_NUM_PARALLEL` non réglé), Ollama traite les
+requêtes une par une (mesuré : 1, 2 puis 3 requêtes simultanées prennent 5,6 s, 8,8 s puis 12 s, à 37 jetons/s
+chacune). D'où `LLM_CONCURRENCY=1` par défaut en local : paralléliser n'apporterait rien. Piste non testée :
+`OLLAMA_NUM_PARALLEL=2` ; le cache KV q8 de qwen2.5-7b ne pèse qu'environ 120 Mo par contexte de 4 096 jetons, il
+tiendrait dans les 6 Go, avec ensuite `LLM_CONCURRENCY=2`.
+
 ### Paramètres d'appel
 
 | Paramètre | Valeur | Fichier |
 |---|---|---|
 | `LLM_TIMEOUT` | 120 s par appel | `app/core/config.py` |
+| `LLM_CONCURRENCY` | 1 (Ollama), 3 (Groq) | appels simultanés, sémaphore partagé (`app/core/concurrency.py`) |
+| `LLM_KEEP_ALIVE` | -1 (Ollama seulement) | `app/phase1_llm/llm.py` (`ollama_options`) |
+| `LLM_FORCE_IPV4` | true | `localhost` → `127.0.0.1` dans `LLM_BASE_URL` |
 | `max_retries` (client OpenAI) | 1 | `app/phase1_llm/llm.py`, `app/phase6_agent/graph.py` |
 | `temperature` par défaut | 0.3 | `chat()` |
 | `max_tokens` par défaut | 1024 | `chat()` |
@@ -55,10 +109,11 @@ Températures et `max_tokens` par usage :
 |---|---|---|---|
 | Tuteur RAG | 0.3 | 1024 | texte (markdown) |
 | Examen : génération QCM / V-F / courte / ouverte | 0.5 | 500 / 300 / 300 / 600 | `json_schema` |
-| Examen : vérification QCM / V-F / rédigée | 0 | 100 / 60 / 20 | `json_schema` |
+| Examen : vérification QCM / V-F / rédigée (unitaire) | 0 | 100 / 60 / 20 | `json_schema` |
+| Examen : vérification groupée (2 à 4 questions d'un type) | 0 | 100 / 60 / 60 | `json_schema` avec exactement N réponses |
 | Flashcards : concepts | 0.2 | 200 | `json_schema` |
 | Flashcards : carte (1re / 2e tentative) | 0.4 / 0.7 | 250 | `json_schema` |
-| Flashcards : vérification | 0 | 20 | `json_schema` |
+| Flashcards : vérification unitaire / groupée (2 à 5 cartes) | 0 | 20 / 60 | `json_schema` (groupée : exactement N réponses) |
 | Résumé : section / vue d'ensemble / thème | 0.3 puis 0.5 | 600 / 500 / 900 | `json_schema` |
 | Agent : choix de l'outil et réponse finale | 0 | défaut du serveur | tool calling |
 | Agent : classification de repli | 0 | 150 | `json_schema` |
@@ -116,6 +171,8 @@ citations `[p.X]`.
 | `SIMILARITY_THRESHOLD` | 0.96 | au-delà, deux questions sont des doublons de sens |
 | `CATCH_UP_SIMILARITY` | 0.985 | seuil assoupli dans le dernier tiers du budget |
 | `EXAM_MIN_CHUNK_CHARS` | 250 | passages plus courts exclus des examens |
+| `ROUND_MAX` | 4 | candidats générés au plus par partie et par tour, vérifiés ensemble en un appel |
+| `AVOID_MAX` | 15 | questions déjà acceptées (et, en séquentiel, candidats du tour) rappelées au générateur |
 | Barème « complet » | 8 QCM × 1 pt, 4 V/F × 1 pt, 2 courtes × 2 pts, 1 ouverte × 4 pts | toujours 20 points ; points manquants complétés par des V/F |
 | Barème « qcm » | 5, 10 ou 20 questions | 4, 2 ou 1 point par question |
 
@@ -128,6 +185,9 @@ citations `[p.X]`.
 | `CONCEPT_SIMILARITY` | 0.97 | deux concepts identiques au-delà |
 | `CARD_SIMILARITY` | 0.92 | deux cartes en double au-delà |
 | `CONTEXT_PASSAGES` | 2 | passages retrouvés pour rédiger une carte |
+| `CARD_ROUND_MAX` | 5 | cartes rédigées au plus par tour, vérifiées ensemble en un appel |
+| `CONCEPT_CACHE_MAX` | 32 cours | cache en mémoire des concepts extraits, par (étudiant, cours, contenu) |
+| Vecteurs des passages | relus dans Qdrant | plus de ré-encodage des passages (26 sur Chapter1_Part_1) |
 | `MIN_PASSAGE_CHARS` | 60 | passages plus courts exclus |
 | Tentatives par concept | 2 | seconde chance à température plus haute |
 | Nombre de cartes | 10, 20 ou 30 | |

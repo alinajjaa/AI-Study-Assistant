@@ -153,6 +153,17 @@ Exécution : `POST /api/companion/messages` lance l'agent dans une tâche de fon
 en 20 s, elle est renvoyée directement (200) ; sinon la route répond **202** avec un `job_id`, et le
 frontend consulte `GET /api/companion/jobs/{id}` en affichant l'outil en cours.
 
+La page Assistant utilise la variante en streaming, `POST /api/companion/messages/stream` (Server-Sent Events) :
+la même tâche de fond est lancée, et ses événements sont transmis au fil de l'eau. On reçoit d'abord `start`
+(job_id), puis `tool` (outil en cours), puis `token` (fragments de la réponse du tuteur, affichés aussitôt), et
+enfin `final` (messages enregistrés et réponse validée, avec ses sources) ou `error`. Si le flux est coupé après
+`start`, la tâche continue côté serveur et le frontend la consulte avec `GET /api/companion/jobs/{id}`. nginx ne
+met pas le flux en tampon (en-tête `X-Accel-Buffering: no`).
+
+Appels au LLM : un sémaphore partagé limite les appels simultanés à `LLM_CONCURRENCY` (1 pour Ollama, 3 pour
+Groq). Les appels indépendants (générations d'un tour, vérifications par type, cartes, blocs de concepts,
+sections du résumé) passent par `parallel_map`. Avec 1, c'est une simple boucle séquentielle.
+
 ## 4. Modèle de données (SQLite)
 
 ```mermaid
@@ -290,6 +301,7 @@ l'étudiant du jeton (404 pour la ressource d'un autre étudiant). Documentation
 | GET | `/api/courses` | liste des cours de l'étudiant | oui |
 | DELETE | `/api/courses/{course}` | supprimer un cours et ses morceaux | oui |
 | POST | `/api/ask` | question au tuteur RAG, sans conversation | oui |
+| POST | `/api/ask/stream` | même question en Server-Sent Events : fragments `token`, puis `final` (réponse validée, sources, `time_to_first_token`) | oui |
 
 ### Conversations
 
@@ -307,6 +319,7 @@ l'étudiant du jeton (404 pour la ressource d'un autre étudiant). Documentation
 | Méthode | Chemin | Rôle | Protégée |
 |---|---|---|---|
 | POST | `/api/companion/messages` | message à l'agent : 200 si la réponse est prête en 20 s, sinon 202 + `job_id` | oui |
+| POST | `/api/companion/messages/stream` | même message en Server-Sent Events (utilisé par la page Assistant) : `start` (job_id), `tool`, `token`, puis `final` ou `error` | oui |
 | GET | `/api/companion/jobs/{job_id}` | état d'une tâche de fond (outil en cours, résultat, erreur) | oui |
 | POST | `/api/quiz-results` | corriger un quiz de l'agent et enregistrer les réponses | oui |
 

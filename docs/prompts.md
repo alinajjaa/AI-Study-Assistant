@@ -95,6 +95,9 @@ Protections :
   côté agent, seule la phrase de refus est gardée (le modèle la complète parfois) ;
 - pas de schéma JSON (texte libre) ; côté frontend, le markdown est converti par `marked` puis nettoyé par
   la sanitization d'Angular (`[innerHTML]`), et les `[p.X]` absentes des sources sont signalées.
+- **streaming** (`/api/ask/stream`, `/api/companion/messages/stream`) : mêmes prompts, envoyés par
+  `chat_stream()`. Les fragments sont affichés tels quels pendant l'écriture (texte brut, échappé) ; la réponse
+  validée (refus détecté, sources, `[p.X]`) arrive dans l'événement final et remplace le brouillon.
 
 ---
 
@@ -177,6 +180,31 @@ Tu es un étudiant rigoureux qui répond uniquement à partir du cours fourni. T
 Toutes à température **0**, prompt passé par `mask_pii`. Si la vérification échoue (erreur LLM, JSON
 invalide, nombre de réponses différent), la question est **gardée sans contrôle** et l'événement est compté
 (`verifications_impossibles`).
+
+**Vérification groupée** (`verify_group`) : les candidats d'un même type générés pendant un tour (2 à 4) sont
+vérifiés en **un seul appel**, chacun avec son propre passage. Un seul candidat : vérification unitaire ci-dessus.
+
+```text
+--- Question 1 ---
+Extrait du cours :
+[page {page}] {passage}
+Question : {question}            ← QCM : suivie des choix A. … D.
+                                 ← Vrai/Faux : « Affirmation : {affirmation} »
+                                 ← courte / réflexion : « Question : … » puis « Réponse attendue : … »
+--- Question 2 ---
+…
+
+Pour chacune des {n} questions, dans l'ordre, donne la lettre de la seule bonne réponse selon SON extrait du cours.
+Format : {"answers":[...]} avec exactement {n} lettres.
+```
+
+(Vrai/Faux : « réponds true si elle est vraie selon SON extrait du cours, false sinon » ; réponses rédigées :
+« true si la réponse attendue est correcte selon SON extrait du cours ET répond exactement à la question posée ».)
+
+Protections : `json_schema` dérivé de `LetterAnswers` / `BoolAnswers` avec **exactement n réponses**
+(`minItems = maxItems = n` ; sans cela qwen2.5 recopiait l'exemple de format à 2 valeurs), puis validation par le
+modèle Pydantic inchangé. JSON invalide ou incomplet : **repli sur la vérification unitaire** de chaque question
+(compté `verifications_groupees_repli`). Les doublons de sens sont écartés **avant** cet appel.
 
 ### 2.5 Validateurs Pydantic (`schemas.py`)
 
@@ -275,7 +303,32 @@ Cette réponse contient-elle une ERREUR, c'est-à-dire une information qui contr
 ```
 
 Température **0**, `max_tokens` **20**, `json_schema=BoolAnswers`. Carte écartée si `true`.
-Ensuite, une carte trop proche d'une carte déjà gardée (similarité ≥ 0.92) est écartée.
+
+### 3.4 Vérification groupée des cartes (`verify_cards`)
+
+Les cartes rédigées pendant un tour (2 à 5) sont vérifiées en un seul appel, même prompt système :
+
+```text
+--- Carte 1 ---
+Extrait du cours :
+{passages de la carte}
+Question : {front}
+Réponse : {back}
+--- Carte 2 ---
+…
+
+Pour chacune des {n} cartes, dans l'ordre : sa réponse contient-elle une ERREUR, c'est-à-dire une information qui
+contredit SON extrait du cours ou qui ne s'y trouve pas ? Réponds true seulement si tu es sûr qu'il y a une erreur.
+Format : {"answers":[...]} avec exactement {n} valeurs true/false.
+```
+
+Température **0**, `max_tokens` **60**, `json_schema` à exactement n booléens, validation `BoolAnswers`. JSON
+invalide ou incomplet : vérification unitaire de chaque carte. Une carte trop proche d'une carte déjà gardée
+(similarité ≥ 0.92) est écartée **avant** la vérification. Une carte rejetée (validation ou vérification) a une
+deuxième chance au tour suivant (température 0.7).
+
+L'extraction des concepts (3.1) est mise en cache en mémoire par (étudiant, cours, empreinte du contenu) : un
+deuxième paquet sur le même cours ne refait pas ces appels.
 
 ---
 

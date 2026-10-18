@@ -43,6 +43,11 @@ export class CompanionThread {
     return progress ? `${text} ${formatElapsed(Math.max(0, (this.now() - progress.startedAt) / 1000))}` : text;
   }
 
+  /** Texte de la réponse déjà reçu (streaming), affiché pendant que l'assistant écrit. */
+  protected draft(message: ChatMessage): string {
+    return this.progress().get(message.id)?.draft ?? '';
+  }
+
   /** Réponse « Hors du cours » : aucun contenu supplémentaire n'est affiché sous la mention. */
   protected extras(message: ChatMessage): AskResponse[] {
     return message.response && isOffCourse(message.response) ? [] : (message.extra ?? []);

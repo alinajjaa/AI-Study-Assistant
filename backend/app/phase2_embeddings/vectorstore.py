@@ -79,8 +79,12 @@ def delete_course(course: str, *, user_id: int | None) -> None:
 
 
 
-def get_course_chunks(course: str, user_id: int | None) -> list[dict]:
-    """Renvoie tous les chunks d'un cours de l'étudiant, triés par numéro de page."""
+def get_course_chunks(course: str, user_id: int | None, with_vectors: bool = False) -> list[dict]:
+    """Renvoie tous les chunks d'un cours de l'étudiant, triés par numéro de page.
+
+    with_vectors=True : chaque chunk contient aussi "vector", l'embedding calculé à l'import (évite de ré-encoder
+    les passages, par exemple pour les flashcards).
+    """
     chunks, offset = [], None
     while True:
         points, offset = client.scroll(
@@ -89,9 +93,10 @@ def get_course_chunks(course: str, user_id: int | None) -> list[dict]:
             limit=256,
             offset=offset,
             with_payload=True,
-            with_vectors=False,
+            with_vectors=with_vectors,
         )
-        chunks.extend(p.payload for p in points)
+        chunks.extend({**p.payload, "vector": p.vector} if with_vectors and p.vector is not None else p.payload
+                      for p in points)
         if offset is None:
             return sorted(chunks, key=lambda c: c["page"])
 

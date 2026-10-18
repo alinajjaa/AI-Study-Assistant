@@ -2,11 +2,12 @@ import json
 import logging
 import random
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 from pydantic import BaseModel, ValidationError
 
+from app.core.concurrency import concurrency, parallel_map
 from app.core.privacy import mask_pii
 from app.phase1_llm.llm import LLMError, chat
 from app.phase2_embeddings.embeddings import embed_passages
@@ -23,6 +24,8 @@ CALLS_PER_QUESTION = 5      # budget d'appels au LLM par question demandée (éc
 SIMILARITY_THRESHOLD = 0.96  # au-dessus, deux questions sont considérées comme des doublons (même sens)
 CATCH_UP_SIMILARITY = 0.985  # en fin de budget, seules les questions quasi identiques sont refusées
 EXAM_MIN_CHUNK_CHARS = 250   # en dessous (titres, schémas), les questions générées sont ambiguës
+ROUND_MAX = 4                # candidats au plus par partie et par tour (vérifiés ensemble : un appel juge)
+AVOID_MAX = 15               # questions déjà acceptées rappelées au modèle (« ne pose pas une question déjà posée »)
 LETTERS = "ABCD"
 
 SYSTEM_PROMPT = (
@@ -158,7 +161,7 @@ def question_text(question: BaseModel) -> str:
 def build_prompt(kind: str, context: list[dict], difficulty: Difficulty, avoid: list[str], want_true: bool) -> str:
     """Construit la consigne de génération pour un type de question (données personnelles masquées)."""
     spec = TYPE_SPECS[kind]
-    already = "\n".join(f"- {q}" for q in avoid[-10:]) or "- (aucune)"
+    already = "\n".join(f"- {q}" for q in avoid[-AVOID_MAX:]) or "- (aucune)"
     truth = "VRAIE selon le cours" if want_true else "FAUSSE : elle modifie un seul détail précis du cours"
     prompt = f"""Cours (chaque passage commence par sa page) :
 {format_course(context)}
@@ -268,12 +271,9 @@ def _keep_matching(questions: list, given: list, expected: list) -> list:
 
 def verify_written(question: ShortAnswerQuestion | OpenQuestion, context: list[dict]) -> bool:
     """Réponses rédigées : le modèle juge si la réponse attendue est correcte ET répond bien à la question."""
-    if isinstance(question, ShortAnswerQuestion):
-        expected = question.expected_answer
-    else:
-        expected = " ; ".join(question.expected_points)
     prompt = mask_pii(
-        f"Cours :\n{format_course(context)}\n\nQuestion : {question.question}\nRéponse attendue : {expected}\n\n"
+        f"Cours :\n{format_course(context)}\n\nQuestion : {question.question}\n"
+        f"Réponse attendue : {_expected(question)}\n\n"
         "La réponse attendue est-elle correcte selon le cours ET répond-elle exactement à la question posée ? "
         'Format : {"answers":[true]} ou {"answers":[false]}'
     )
@@ -291,8 +291,14 @@ def verify_written(question: ShortAnswerQuestion | OpenQuestion, context: list[d
     return verdict
 
 
+def _expected(question: ShortAnswerQuestion | OpenQuestion) -> str:
+    if isinstance(question, ShortAnswerQuestion):
+        return question.expected_answer
+    return " ; ".join(question.expected_points)
+
+
 def verify(kind: str, questions: list, context: list[dict]) -> list:
-    """Chaque type de question est vérifié avant d'entrer dans l'examen."""
+    """Vérification unitaire (un passage) de questions d'un même type."""
     if not questions:
         return []
     if kind == "qcm":
@@ -300,6 +306,82 @@ def verify(kind: str, questions: list, context: list[dict]) -> list:
     if kind == "vrai_faux":
         return verify_true_false(questions, context)
     return [q for q in questions if verify_written(q, context)]
+
+
+# ---------------------------------------------------------------------------
+# Vérification groupée : un seul appel juge pour les questions d'un même type d'un tour (chacune avec son
+# propre passage). JSON invalide ou incomplet → repli sur la vérification unitaire de chaque question.
+# ---------------------------------------------------------------------------
+
+def answers_schema(model: type[BaseModel], n: int) -> dict:
+    """Schéma JSON envoyé au LLM pour une vérification groupée : exactement n réponses (le modèle recopie sinon
+    l'exemple de format, souvent de longueur 2). La validation Pydantic des réponses reste celle de `model`."""
+    schema = model.model_json_schema()
+    schema["properties"]["answers"] = {**schema["properties"]["answers"], "minItems": n, "maxItems": n}
+    return schema
+
+
+def _grouped_listing(items: list[tuple[BaseModel, list[dict]]], render) -> str:
+    return "\n\n".join(f"--- Question {i} ---\nExtrait du cours :\n{format_course(context)}\n{render(question)}"
+                       for i, (question, context) in enumerate(items, start=1))
+
+
+def _render_mcq(q: MCQQuestion) -> str:
+    return f"Question : {q.question}\n" + "\n".join(f"{letter}. {choice}" for letter, choice in zip(LETTERS, q.choices))
+
+
+def _render_tf(q: TrueFalseQuestion) -> str:
+    return f"Affirmation : {q.statement}"
+
+
+def _render_written(q: ShortAnswerQuestion | OpenQuestion) -> str:
+    return f"Question : {q.question}\nRéponse attendue : {_expected(q)}"
+
+
+def _unit_verdicts(kind: str, items: list[tuple[BaseModel, list[dict]]]) -> list[bool]:
+    return parallel_map(lambda item: bool(verify(kind, [item[0]], item[1])), items)
+
+
+def verify_group(kind: str, items: list[tuple[BaseModel, list[dict]]]) -> list[bool]:
+    """Verdict (gardée ou non) de chaque question, dans l'ordre. Une seule question : vérification unitaire."""
+    if len(items) <= 1:
+        return _unit_verdicts(kind, items)
+    n = len(items)
+    if kind == "qcm":
+        instruction = (f"Pour chacune des {n} questions, dans l'ordre, donne la lettre de la seule bonne réponse "
+                       f'selon SON extrait du cours. Format : {{"answers":[...]}} avec exactement {n} lettres.')
+        listing, model, max_tokens = _grouped_listing(items, _render_mcq), LetterAnswers, 100
+        expected = [q.answer for q, _ in items]
+    elif kind == "vrai_faux":
+        instruction = (f"Pour chacune des {n} affirmations, dans l'ordre, réponds true si elle est vraie selon SON "
+                       f'extrait du cours, false sinon. Format : {{"answers":[...]}} avec exactement {n} valeurs.')
+        listing, model, max_tokens = _grouped_listing(items, _render_tf), BoolAnswers, 60
+        expected = [q.answer for q, _ in items]
+    else:
+        instruction = (f"Pour chacune des {n} questions, dans l'ordre, réponds true si la réponse attendue est "
+                       "correcte selon SON extrait du cours ET répond exactement à la question posée, false sinon. "
+                       f'Format : {{"answers":[...]}} avec exactement {n} valeurs.')
+        listing, model, max_tokens = _grouped_listing(items, _render_written), BoolAnswers, 60
+        expected = [True] * n
+    prompt = mask_pii(f"{listing}\n\n{instruction}")
+    try:
+        raw = chat(VERIFY_SYSTEM_PROMPT, prompt, max_tokens=max_tokens, temperature=0,
+                   json_schema=answers_schema(model, n))
+        answers = model.model_validate_json(raw).answers[:n]  # une réponse de trop est ignorée
+    except (LLMError, ValidationError) as e:
+        logger.info("Vérification groupée (%s) illisible, repli unitaire : %s", kind, e)
+        answers = []
+    if len(answers) != n:
+        record("verifications_groupees_repli")
+        return _unit_verdicts(kind, items)
+    record("verifications_groupees")
+    verdicts = [got == want for got, want in zip(answers, expected)]
+    for (question, _), ok in zip(items, verdicts):
+        if not ok:
+            logger.info("Question écartée (vérification groupée) : %s", question_text(question)[:70])
+            reject("verification", question.type)
+    return verdicts
+
 
 def shuffle_choices(question: MCQQuestion, rng: random.Random) -> MCQQuestion:
     """Mélange les choix pour que la bonne réponse ne soit pas toujours à la même position."""
@@ -310,8 +392,12 @@ def shuffle_choices(question: MCQQuestion, rng: random.Random) -> MCQQuestion:
 
 
 # ---------------------------------------------------------------------------
-# Génération
+# Génération par tours
 # ---------------------------------------------------------------------------
+# À chaque tour, chaque partie incomplète reçoit jusqu'à ROUND_MAX candidats, chacun ancré sur un passage
+# différent. Les candidats d'un tour sont générés (en parallèle si LLM_CONCURRENCY > 1), filtrés (validation
+# Pydantic, puis doublons de sens par embeddings, AVANT tout appel de vérification), puis vérifiés en un appel
+# groupé par type. La logique ne dépend pas de LLM_CONCURRENCY : seule l'exécution change.
 
 def is_duplicate(vector: list[float], seen_vectors: list[list[float]], threshold: float) -> bool:
     """Deux questions de même sens (même si la formulation change) sont des doublons."""
@@ -320,65 +406,145 @@ def is_duplicate(vector: list[float], seen_vectors: list[list[float]], threshold
     return float(np.max(np.array(seen_vectors) @ np.array(vector))) >= threshold
 
 
-def generate_section(plan: SectionPlan, chunks: list[dict], difficulty: Difficulty, asked: list[str],
-                     seen_vectors: list[list[float]], used: set[int], rng: random.Random) -> tuple[list, LLMError | None]:
-    """Génère les questions d'une partie, UNE par passage du cours, sans doublons de sens.
+@dataclass
+class SectionState:
+    """Avancement d'une partie de l'examen."""
 
-    Ancrer chaque question sur un passage différent force le modèle à varier les notions interrogées
-    et répartit naturellement l'examen sur tout le cours.
-    """
-    spec = TYPE_SPECS[plan.kind]
-    order = list(range(len(chunks)))
+    plan: SectionPlan
+    pending: list[int]           # passages encore disponibles (deux passages sur le cours au maximum)
+    questions: list = field(default_factory=list)
+    calls: int = 0               # appels de génération (le budget ne compte pas les vérifications)
+
+    @property
+    def budget(self) -> int:
+        return self.plan.count * CALLS_PER_QUESTION
+
+    @property
+    def missing(self) -> int:
+        return self.plan.count - len(self.questions)
+
+
+@dataclass
+class Candidate:
+    state: SectionState
+    index: int                   # passage d'ancrage
+    context: list[dict]
+    want_true: bool
+    threshold: float             # seuil de doublon au moment de la génération
+    question: BaseModel | None = None
+    vector: list[float] | None = None
+    error: LLMError | None = None
+
+
+def new_section(plan: SectionPlan, n_chunks: int, rng: random.Random) -> SectionState:
+    order = list(range(n_chunks))
     rng.shuffle(order)
-    order.sort(key=lambda i: i in used)  # les passages pas encore utilisés par une autre partie d'abord
-    budget = plan.count * CALLS_PER_QUESTION
-    questions: list = []
-    last_error: LLMError | None = None
-    calls = 0
     record(f"demandees_{plan.kind}", plan.count)
+    return SectionState(plan=plan, pending=order * 2)
 
-    for index in order * 2:  # deux passages sur le cours au maximum
-        if len(questions) >= plan.count or calls >= budget:
-            break
-        context = passage_window(chunks, index, spec.window)
-        allowed_pages = sorted({c["page"] for c in context})
-        # Vrai/Faux : on alterne vrai et faux pour équilibrer la partie
-        want_true = len(questions) % 2 == 0
-        # En fin de budget, on n'écarte plus que les questions quasi identiques
-        threshold = SIMILARITY_THRESHOLD if calls < budget * 2 / 3 else CATCH_UP_SIMILARITY
-        prompt = build_prompt(plan.kind, context, difficulty, asked, want_true)
-        calls += 1
-        record("appels_generation")
 
-        try:
-            raw = chat(SYSTEM_PROMPT, prompt, max_tokens=spec.max_tokens, temperature=0.5,
-                       json_schema=spec.batch_model.model_json_schema())
-        except LLMError as e:
-            # Un appel raté (boucle du modèle, réponse vide…) ne doit pas faire échouer tout l'examen
-            logger.warning("Appel %s ignoré : %s", plan.kind, e)
-            record("erreurs_llm")
-            last_error = e
-            continue
+def _pick(state: SectionState, k: int, taken: set[int], used: set[int]) -> list[int]:
+    """k passages pour cette partie : jamais deux fois le même dans un tour, les passages pas encore utilisés
+    par une question acceptée d'abord (l'examen se répartit sur tout le cours)."""
+    chosen: list[int] = []
+    for only_new in (True, False):
+        for index in list(state.pending):
+            if len(chosen) >= k:
+                return chosen
+            if index in taken or index in chosen or (only_new and index in used):
+                continue
+            chosen.append(index)
+            state.pending.remove(index)
+    return chosen
 
-        candidates = verify(plan.kind, parse_items(plan.kind, raw, allowed_pages)[:1], context)
-        if not candidates:
-            continue
-        question = candidates[0]
-        vector = embed_passages([question_text(question)])[0]
-        if is_duplicate(vector, seen_vectors, threshold):
-            logger.info("Question écartée (doublon de sens) : %s", question_text(question)[:70])
-            reject("doublon", plan.kind)
-            continue
 
-        seen_vectors.append(vector)
-        asked.append(question_text(question))
-        used.add(index)
-        questions.append(shuffle_choices(question, rng) if plan.kind == "qcm" else question)
+def _generate(candidate: Candidate, difficulty: Difficulty, avoid: list[str]) -> Candidate:
+    """Un appel de génération pour un candidat (exécuté dans un thread si LLM_CONCURRENCY > 1)."""
+    kind = candidate.state.plan.kind
+    spec = TYPE_SPECS[kind]
+    allowed_pages = sorted({c["page"] for c in candidate.context})
+    record("appels_generation")
+    try:
+        raw = chat(SYSTEM_PROMPT, build_prompt(kind, candidate.context, difficulty, avoid, candidate.want_true),
+                   max_tokens=spec.max_tokens, temperature=0.5, json_schema=spec.batch_model.model_json_schema())
+    except LLMError as e:
+        # Un appel raté (boucle du modèle, réponse vide…) ne doit pas faire échouer tout l'examen
+        logger.warning("Appel %s ignoré : %s", kind, e)
+        record("erreurs_llm")
+        candidate.error = e
+        return candidate
+    items = parse_items(kind, raw, allowed_pages)[:1]
+    candidate.question = items[0] if items else None
+    return candidate
 
-    if len(questions) < plan.count:
-        logger.warning("Partie « %s » incomplète : %d/%d questions après %d appels",
-                       plan.title, len(questions), plan.count, calls)
-    return questions, last_error
+
+def run_sections(states: list[SectionState], chunks: list[dict], difficulty: Difficulty, asked: list[str],
+                 seen_vectors: list[list[float]], used: set[int], rng: random.Random) -> LLMError | None:
+    """Remplit les parties tour par tour, jusqu'au nombre demandé ou à l'épuisement du budget ou des passages."""
+    last_error: LLMError | None = None
+    while True:
+        round_: list[Candidate] = []
+        taken: set[int] = set()
+        for state in states:
+            k = min(state.missing, ROUND_MAX, state.budget - state.calls)
+            if k <= 0:
+                continue
+            window = TYPE_SPECS[state.plan.kind].window
+            for j, index in enumerate(_pick(state, k, taken, used)):
+                taken.add(index)
+                # En fin de budget, on n'écarte plus que les questions quasi identiques
+                threshold = SIMILARITY_THRESHOLD if state.calls < state.budget * 2 / 3 else CATCH_UP_SIMILARITY
+                state.calls += 1
+                round_.append(Candidate(state=state, index=index, context=passage_window(chunks, index, window),
+                                        # Vrai/Faux : on alterne vrai et faux pour équilibrer la partie
+                                        want_true=(len(state.questions) + j) % 2 == 0, threshold=threshold))
+        if not round_:
+            return last_error
+
+        # 1. Génération. Les questions déjà acceptées sont données au modèle (« ne pose pas une question déjà
+        #    posée ») ; en séquentiel, aussi les candidats déjà générés dans ce tour (en parallèle, ils ne sont pas
+        #    encore connus : le filtre par embeddings ci-dessous les écarte).
+        if concurrency() <= 1:
+            avoid = list(asked)
+            for candidate in round_:
+                _generate(candidate, difficulty, avoid[-AVOID_MAX:])
+                if candidate.question is not None:
+                    avoid.append(question_text(candidate.question))
+        else:
+            avoid = asked[-AVOID_MAX:]
+            round_ = parallel_map(lambda c: _generate(c, difficulty, avoid), round_)
+        last_error = next((c.error for c in reversed(round_) if c.error), last_error)
+
+        # 2. Doublons de sens AVANT la vérification : un doublon ne coûte plus d'appel au juge
+        valid = [c for c in round_ if c.question is not None]
+        vectors = embed_passages([question_text(c.question) for c in valid]) if valid else []
+        kept: list[Candidate] = []
+        for candidate, vector in zip(valid, vectors):
+            if is_duplicate(vector, seen_vectors + [k.vector for k in kept], candidate.threshold):
+                logger.info("Question écartée (doublon de sens) : %s", question_text(candidate.question)[:70])
+                reject("doublon", candidate.state.plan.kind)
+                continue
+            candidate.vector = vector
+            kept.append(candidate)
+
+        # 3. Vérification groupée, un appel par type de question (les types en parallèle si possible)
+        groups: dict[str, list[Candidate]] = {}
+        for candidate in kept:
+            groups.setdefault(candidate.state.plan.kind, []).append(candidate)
+        verdicts = parallel_map(
+            lambda group: verify_group(group[0], [(c.question, c.context) for c in group[1]]), list(groups.items()))
+
+        # 4. Questions acceptées, dans l'ordre du tour
+        accepted = {id(c) for (_, group), oks in zip(groups.items(), verdicts) for c, ok in zip(group, oks) if ok}
+        for candidate in kept:
+            if id(candidate) not in accepted:
+                continue
+            question = candidate.question
+            seen_vectors.append(candidate.vector)
+            asked.append(question_text(question))
+            used.add(candidate.index)
+            candidate.state.questions.append(shuffle_choices(question, rng) if candidate.state.plan.kind == "qcm"
+                                             else question)
 
 
 def generate_exam(course: str, fmt: ExamFormat = "complet", num_questions: int = 20,
@@ -406,14 +572,11 @@ def _generate_exam(course: str, fmt: ExamFormat, num_questions: int, difficulty:
     asked: list[str] = []
     seen_vectors: list[list[float]] = []
     used: set[int] = set()
-    results: dict[str, list] = {}
-    last_error: LLMError | None = None
     t0 = time.perf_counter()
 
-    for plan in plans:
-        questions, error = generate_section(plan, chunks, difficulty, asked, seen_vectors, used, rng)
-        last_error = error or last_error
-        results[plan.kind] = questions
+    states = [new_section(plan, len(chunks), rng) for plan in plans]
+    last_error = run_sections(states, chunks, difficulty, asked, seen_vectors, used, rng)
+    results: dict[str, list] = {state.plan.kind: state.questions for state in states}
 
     # Examen complet : s'il manque des points (questions écartées), on complète avec des Vrai/Faux à 1 point,
     # le type le plus fiable à générer et à vérifier, pour que l'examen soit toujours noté sur 20.
@@ -423,9 +586,15 @@ def _generate_exam(course: str, fmt: ExamFormat, num_questions: int, difficulty:
             tf_plan = next(p for p in plans if p.kind == "vrai_faux")
             logger.info("Complément : %d affirmation(s) Vrai/Faux pour atteindre 20 points", missing)
             extra_plan = SectionPlan(tf_plan.kind, tf_plan.title, tf_plan.instructions, missing, tf_plan.points)
-            extra, error = generate_section(extra_plan, chunks, difficulty, asked, seen_vectors, used, rng)
-            last_error = error or last_error
-            results["vrai_faux"].extend(extra)
+            extra = new_section(extra_plan, len(chunks), rng)
+            last_error = run_sections([extra], chunks, difficulty, asked, seen_vectors, used, rng) or last_error
+            states.append(extra)
+            results["vrai_faux"].extend(extra.questions)
+
+    for state in states:
+        if state.missing > 0:
+            logger.warning("Partie « %s » incomplète : %d/%d questions après %d appels",
+                           state.plan.title, len(state.questions), state.plan.count, state.calls)
 
     sections: list[ExamSection] = []
     for plan in plans:

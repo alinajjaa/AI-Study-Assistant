@@ -82,14 +82,19 @@ class ScriptedExamLLM:
 
     def __init__(self):
         self.generation = 0
-        self.verification = 0
+        self.verified = 0  # questions vérifiées (une vérification groupée en contient plusieurs)
+        self.verify_calls = 0
 
     def __call__(self, system, prompt, **kwargs):
         from app.phase4_exam.generator import VERIFY_SYSTEM_PROMPT
 
         if system == VERIFY_SYSTEM_PROMPT:
-            self.verification += 1
-            return json.dumps({"answers": ["B" if self.verification == 1 else "A"]})
+            self.verify_calls += 1
+            answers = []
+            for _ in range(max(1, prompt.count("--- Question "))):
+                self.verified += 1
+                answers.append("B" if self.verified == 1 else "A")  # la 1re question vérifiée est contredite
+            return json.dumps({"answers": answers})
         self.generation += 1
         n = self.generation
         if n == 1:
@@ -149,7 +154,10 @@ def test_examen_compteurs(monkeypatch):
     assert stats.get("rejets_verification_qcm") == 1
     assert stats.get("rejets_doublon_qcm") == 1
     assert stats.get("appels_generation") == 9  # 5 questions + 4 rejets
-    assert stats.get("appels_llm") == 9 + 7  # + une vérification par question valide
+    # Tours de 4, 4 puis 1 candidats : le doublon est écarté AVANT la vérification, et les questions valides
+    # d'un tour sont vérifiées en un seul appel (2, 3 puis 1 questions) : 3 vérifications au lieu de 7
+    assert stats.get("appels_llm") == 9 + 3
+    assert stats.get("verifications_groupees") == 2 and stats.get("verifications_groupees_repli") == 0
     assert stats.values["passages"] == 6
 
     params, metrics, tags = tracking.exam_run(stats, course="CNN", fmt="qcm", difficulty="facile",
@@ -177,8 +185,9 @@ class ScriptedFlashcardLLM:
     def __call__(self, system, prompt, **kwargs):
         from app.phase7_flashcards.generator import VERIFY_SYSTEM_PROMPT
 
-        if system == VERIFY_SYSTEM_PROMPT:
-            return json.dumps({"answers": ["filtre" in prompt.lower()]})  # « true » = erreur détectée
+        if system == VERIFY_SYSTEM_PROMPT:  # « true » = erreur détectée ; une carte par bloc « --- Carte i --- »
+            cards = prompt.split("--- Carte ")[1:] or [prompt]
+            return json.dumps({"answers": ["filtre" in card.lower() for card in cards]})
         if "notions clés" in prompt:
             return json.dumps({"items": [{"name": "Pooling", "importance": 3}, {"name": "Convolution", "importance": 2},
                                          {"name": "Filtre", "importance": 1}]})

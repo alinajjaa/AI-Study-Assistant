@@ -377,9 +377,12 @@ def default_llm() -> BaseChatModel:
         from langchain_openai import ChatOpenAI
 
         # max_retries : le client OpenAI réessaie aussi les erreurs 429 (limite de débit) avec une attente
+        from app.phase1_llm.llm import ollama_options
+
         _llm = ChatOpenAI(base_url=config.LLM_BASE_URL, api_key=config.LLM_API_KEY, model=config.LLM_MODEL,
                           temperature=0, timeout=config.LLM_TIMEOUT,
-                          max_retries=max(1, config.LLM_RATE_LIMIT_RETRIES))
+                          max_retries=max(1, config.LLM_RATE_LIMIT_RETRIES),
+                          **ollama_options())  # keep_alive (Ollama) : modèle gardé en mémoire GPU
     return _llm
 
 
