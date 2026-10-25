@@ -1,0 +1,123 @@
+# Intégration continue : analyse statique, sécurité, tests et build à chaque push et pull request.
+# Aucun service externe : les tests backend utilisent SQLite temporaire, Qdrant en mémoire, embeddings et LLM
+# simulés (tests/conftest.py). Aucun secret n'est nécessaire.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (ruff, bandit, pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+
+      - name: Dépendances (torch CPU, comme dans le Dockerfile)
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+          grep -vE '^(torch|pywin32)==' requirements.txt > /tmp/requirements-ci.txt
+          pip install -r /tmp/requirements-ci.txt -r requirements-dev.txt
+
+      - name: Analyse statique (ruff)
+        run: ruff check app scripts tests --output-format github
+
+      - name: Sécurité du code (bandit)
+        run: bandit -c bandit.yaml -r app scripts
+
+      - name: Tests et couverture (pytest)
+        env:
+          JWT_SECRET: secret-de-ci-uniquement-0123456789abcdef
+          MLFLOW_ENABLED: "false"
+        run: pytest -q --cov=app --cov-report=term --cov-report=xml:coverage.xml
+
+      - name: Rapport de couverture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: couverture-backend
+          path: backend/coverage.xml
+          if-no-files-found: ignore
+
+  frontend:
+    name: Frontend (ng test, ng build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Dépendances
+        run: npm ci
+
+      - name: Tests unitaires (vitest, sans navigateur) et couverture
+        run: npx ng test --watch=false --coverage --coverage-reporters=text-summary --coverage-reporters=lcov
+
+      - name: Build de production
+        run: npx ng build
+
+      - name: Rapport de couverture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: couverture-frontend
+          path: frontend/coverage
+          if-no-files-found: ignore
+
+  audit:
+    name: Audit des dépendances (pip-audit, npm audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Une nouvelle vulnérabilité publiée ne doit pas bloquer un push sans rapport avec elle : le job signale,
+    # l'équipe décide de la mise à jour.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: pip-audit (backend)
+        working-directory: backend
+        run: |
+          pip install pip-audit==2.10.1
+          grep -vE '^pywin32==' requirements.txt > /tmp/requirements-audit.txt
+          pip-audit -r /tmp/requirements-audit.txt --progress-spinner off
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: npm audit (frontend, dépendances de production)
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=high

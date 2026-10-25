@@ -1,0 +1,18 @@
+dossier;instructions_avant_phase3;instructions_apres;branches_apres;fonctions_apres;lignes_apres;nb_instructions
+app (racine);81.4;81.4;86.6;53.3;86.5;156
+core/guards;100.0;100.0;87.5;100.0;100.0;8
+core/interceptors;82.2;82.2;67.6;81.3;82.5;45
+core/models;100.0;100.0;86.2;100.0;100.0;39
+core/services;90.9;90.9;82.8;88.7;90.4;461
+core/utils;87.2;87.2;87.3;89.5;88.0;78
+features/auth;10.1;96.8;95.7;88.9;98.6;218
+features/companion;82.9;82.9;73.2;67.3;84.5;1539
+features/courses;79.8;79.8;68.8;75.0;83.8;168
+features/exams;89.5;89.5;82.1;80.0;89.3;152
+features/flashcards;85.9;85.9;75.0;70.6;86.4;476
+features/profile;88.6;88.6;76.3;82.1;90.5;220
+features/summaries;88.1;88.1;67.9;86.3;87.4;293
+shared/components;68.6;68.6;74.2;57.6;69.0;507
+shared/utils;37.5;37.5;8.3;66.7;37.5;16
+shell;92.6;92.6;81.7;87.8;92.2;216
+TOTAL (instructions / branches / fonctions / lignes);80.18;84.30;76.70;75.37;85.42;4593

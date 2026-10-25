@@ -157,7 +157,7 @@ Fichier `backend/.env` (modèle : [backend/.env.example](backend/.env.example)).
 |---|---|---|
 | `LLM_BASE_URL` | `http://localhost:11434/v1` | serveur LLM compatible OpenAI (Ollama, Groq, OpenAI) |
 | `LLM_API_KEY` | `ollama` | clé du fournisseur (non vide ; Ollama n'en vérifie pas la valeur) |
-| `LLM_MODEL` | `qwen2.5:3b` (mettre `qwen2.5:7b`) | modèle utilisé |
+| `LLM_MODEL` | `qwen2.5:7b` (`qwen2.5-7b-gpu` avec le `Modelfile` de la racine) | modèle utilisé |
 | `GROQ_API_KEY` | vide | clé Groq ; prioritaire sur `LLM_API_KEY` quand `LLM_BASE_URL` pointe vers Groq |
 | `LLM_TIMEOUT` | `120` | secondes avant d'abandonner un appel |
 | `LLM_JSON_MODE` | `json_schema` | `json_object` : force ce mode (repli automatique sinon) |

@@ -9,6 +9,14 @@
 | Base vectorielle | **Qdrant** (collection `courses`, distance cosinus) | Docker, en local (`http://localhost:6333`) | `QDRANT_URL` |
 | Modèle affiné (optionnel) | **Qwen/Qwen2.5-1.5B-Instruct** + adaptateur LoRA [Alinajjaa/study-tutor-qwen2.5-1.5b-lora](https://huggingface.co/Alinajjaa/study-tutor-qwen2.5-1.5b-lora) | entraînement sur Google Colab, démonstration en local (4 bits) | `LLM_PROVIDER=hf-local`, `HF_BASE_MODEL`, `HF_ADAPTER` |
 
+En développement, l'application utilise **`qwen2.5-7b-gpu`** : les mêmes poids que qwen2.5:7b, chargés
+entièrement sur le GPU par le [`Modelfile`](../Modelfile) de la racine (`num_gpu 99`, `num_ctx 4096`), avec
+la *flash attention*, un cache KV en 8 bits et `keep_alive` illimité côté serveur Ollama. Benchmark MLflow
+du 18/10/2026 (`app/phase5_evaluation/results/Chapter1_Part_1_2026-10-18_1729.csv`, un run par génération),
+comparé à qwen2.5:7b (moyenne de 3 runs, 14/10) : examen complet 158 → 102 s, 10 flashcards 129 → 62 s,
+résumé 42 → 28 s, tuteur 6,1 → 4,0 s par question, avec la même qualité (20/20, 10/10 cartes, 100 % de
+pages valides, `hit_3` et refus hors cours à 100 %). Détails : [prompts.md §12.3](prompts.md#123-optimisation-gpu-dollama-configuration-du-serveur).
+
 ## 2. LLM : qwen2.5:7b via Ollama
 
 ### Pourquoi ce choix
@@ -208,7 +216,7 @@ Constatées pendant le développement avec qwen2.5:7b ; chacune a reçu une prot
 
 | Limite | Effet | Protection |
 |---|---|---|
-| Lenteur d'un LLM local | examen complet ≈ 2 min 30, 10 flashcards ≈ 2 min, résumé ≈ 45 s | tâches de fond (202 + consultation), budgets d'appels |
+| Lenteur d'un LLM local | qwen2.5:7b : examen complet ≈ 2 min 40, 10 flashcards ≈ 2 min 10, résumé ≈ 42 s ; qwen2.5-7b-gpu : ≈ 1 min 40, ≈ 1 min, ≈ 28 s | variante 100 % GPU, tâches de fond (202 + consultation), budgets d'appels |
 | Sorties invalides (12 à 39 % de rejets de validation selon les runs) | JSON valide mais contenu hors consignes : négations, « combien », choix « Tous les… », texte resté en anglais | validateurs Pydantic, nouvelles tentatives, budget d'appels |
 | Réponses fausses | corrigé d'examen ou verso de carte qui contredit le cours | auto-vérification à température 0 |
 | Mauvais numéros de page | page citée absente des passages | page remplacée par la plus proche (examens, cartes) ; puce rejetée (résumés) |

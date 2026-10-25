@@ -1,0 +1,9 @@
+module;demandes;appels_api;jetons_entree;jetons_cache_ecriture;jetons_cache_lecture;jetons_sortie;duree_active_min;lignes_ecrites_outils;tests_builds;tests_builds_en_echec
+M1 + M5 Study Companion et agent LangGraph;1;94;188;335915;21994422;174341;39.9;4295;15;2
+M1 Architecture, tuteur RAG, intégration;13;579;1160;2283717;176298659;822281;221.9;19972;108;11
+M1 Optimisation des performances (travaux expérimentaux);1;91;182;554541;45998849;133335;52.1;1532;14;6
+M2 Fine-tuning LoRA/QLoRA;2;47;94;343617;7275467;72923;17.1;1889;5;1
+M3 Générateur d'examens;6;49;98;613623;10134242;86582;16.9;1807;7;2
+M4 Flashcards et résumés;3;49;98;538940;19208993;98054;30.4;3404;15;3
+M5 Agent, MLflow, tests et CI/CD;3;36;72;96563;14164851;61497;21.8;854;9;1
+Transverse : documentation et rapport;12;281;562;1138456;82881968;451400;186.1;13479;72;7

@@ -141,7 +141,7 @@ Aucune sortie du LLM n'est affichée sans contrôle :
 | **Tâches de fond en mémoire** | perdues au redémarrage du serveur ; un seul processus uvicorn possible ; résultats oubliés après une heure | file de tâches persistante (Celery/RQ + Redis) |
 | `mask_pii` ne reconnaît que les emails et les numéros | un nom, une adresse postale ou un identifiant étudiant non numérique passent | reconnaissance d'entités nommées (NER) |
 | Données en clair sur le disque | `study.db`, PDF des examens et Qdrant non chiffrés | chiffrement du disque ou de la base |
-| Pas de limitation de débit | inscriptions ou connexions en rafale, générations coûteuses lancées en boucle | limiteur de requêtes (ex. `slowapi`) |
+| Limitation de débit partielle | la **connexion** est limitée (`LoginThrottle`, `auth_routes.py` : après 5 échecs pour un même email en 15 min, réponse **429** avec `Retry-After` ; compteur remis à zéro par une connexion réussie). Le compteur est **en mémoire** : valable pour un seul processus uvicorn, remis à zéro au redémarrage. Les inscriptions et les générations coûteuses ne sont pas limitées | limiteur de requêtes global (ex. `slowapi`) avec un stockage partagé (Redis) |
 | Qdrant sans authentification | accessible à tout processus local sur le port 6333 | clé API Qdrant, réseau Docker privé |
 | HTTP en local | trafic non chiffré | HTTPS derrière un proxy inverse en production |
 | Contenu des PDF importés | un cours peut contenir des données personnelles qui ne sont ni numéros ni emails ; elles iraient dans Qdrant | avertissement à l'import, NER |

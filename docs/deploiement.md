@@ -230,5 +230,9 @@ docker run --rm -p 7860:7860 --env-file backend/.env -e QDRANT_PATH=/app/data/qd
   (Space) sont exposés.
 - **Données envoyées à Groq** : avec le profil Groq, les extraits de cours et les questions (après `mask_pii`)
   quittent la machine et sont traités par un service externe. Pour des cours confidentiels, rester sur Ollama.
-- Limites connues inchangées (voir [securite.md](securite.md)) : jeton JWT dans `localStorage`, tâches de fond en
-  mémoire, pas de limitation de débit côté application — à traiter avant une ouverture large au public.
+- **Connexion limitée** : `LoginThrottle` refuse la connexion après 5 échecs pour un même email en 15 min (réponse
+  429 avec `Retry-After`). Le compteur est en mémoire : il vaut pour un seul processus (cas de Compose et du
+  Space) et repart de zéro au redémarrage.
+- Limites connues (voir [securite.md](securite.md)) : jeton JWT dans `localStorage`, tâches de fond et limiteur de
+  connexion en mémoire, pas de limitation de débit sur les inscriptions ni sur les générations — à traiter avant
+  une ouverture large au public.

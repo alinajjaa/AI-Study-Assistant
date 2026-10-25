@@ -1,0 +1,19 @@
+appel;modele;temperature;max_tokens;format;jetons_entree;jetons_sortie;tronque;duree_s;debit_sortie_tok_s;debut_sortie
+tuteur;qwen2.5:7b;0.3;1024;texte;737;180;False;16.09;21.8;La couche de pooling dans un CNN sert à réduire la taille des cartes d'activation tout en 
+tuteur_suivi_historique;qwen2.5:7b;0.3;1024;texte;814;193;False;9.68;21.9;La convolution est une étape importante dans un CNN où la couche convolutive prend une pet
+tuteur_hors_cours;qwen2.5:7b;0.3;1024;texte;662;11;False;1.11;23.7;Cette information n'est pas présente dans le cours.
+examen_generation_qcm;qwen2.5:7b;0.5;500;json_schema;735;125;False;6.62;21.9;"{""items"":[{""question"":""Selon le cours, quel n'est PAS l'une des raisons pour lesquelles la"
+examen_generation_vrai_faux;qwen2.5:7b;0.5;300;json_schema;590;94;False;4.88;22.1;"{""items"":[{""statement"":""selon le cours, la limitation de la complexité des réseaux de neur"
+examen_verification_vrai_faux;qwen2.5:7b;0;60;json_schema;300;7;False;0.86;25.4;"{""answers"":[true,false]}"
+examen_generation_courte;qwen2.5:7b;0.5;300;json_schema;565;69;False;3.68;22.3;"{""items"":[{""question"":""Quelle est la raison principale de la réduction de la complexité de"
+examen_verification_courte;qwen2.5:7b;0;20;json_schema;319;6;False;0.69;25.5;"{""answers"":[true]}"
+examen_generation_ouverte;qwen2.5:7b;0.5;600;json_schema;903;186;False;9.59;21.7;"{""items"":[{""question"":""Selon le cours, comment l'architecture d'un réseau neuronal profond"
+examen_verification_ouverte;qwen2.5:7b;0;20;json_schema;692;6;False;1.14;25.3;"{""answers"":[true]}"
+flashcards_concepts;qwen2.5:7b;0.2;200;json_schema;629;38;False;2.56;21.9;"{""items"":[{""name"":""Artificial Neural Networks"",""importance"":3},{""name"":""Overfitting"",""impo"
+flashcards_carte;qwen2.5:7b;0.4;250;json_schema;548;87;False;4.41;22.2;"{""items"":[{""concept"":""Artificial Neural Networks"",""front"":""Qu'est-ce que les Réseaux de Ne"
+flashcards_verification;qwen2.5:7b;0;20;json_schema;417;6;False;0.89;26.2;"{""answers"":[false]}"
+resume_section_map;qwen2.5:7b;0.3;600;json_schema;1233;132;False;7.38;21.5;"{""title"":""Introduction aux Convolutionnelles Neural Networks (CNN)"",""bullets"":[""Les CNN so"
+resume_section_map;qwen2.5:7b;0.5;600;json_schema;1233;148;False;7.29;21.3;"{""title"":""Architecture des réseaux de neurones convolutifs"",""bullets"":[""CNNs utilisent des"
+resume_vue_ensemble_reduce;qwen2.5:7b;0.3;500;json_schema;286;111;False;5.53;22.3;"{""overview"":""Ce cours explore l'architecture des réseaux de neurones convolutifs (CNNs). I"
+agent_classification_repli;qwen2.5:7b;0;150;json_schema;289;27;False;1.7;23.0;"{""outil"":""generate_quiz"",""cours"":""CNN_intro"",""theme"":null,""nombre"":5,""difficulte"":null}"
+agent_choix_outil_tool_calling;qwen2.5:7b;0;défaut;tool calling;994;27;False;2.27;22.2;"[{""index"": 0, ""name"": ""generate_quiz"", ""arguments"": {""count"": 5, ""course"": ""CNN_intro""}}]"

@@ -1,0 +1,14 @@
+module;avant_phase3;apres_phase3;instructions
+app (racine);100.0;100.0;57
+core;92.2;93.8;113
+phase1_llm;86.8;86.8;106
+phase2_embeddings;61.8;62.6;139
+phase3_rag;87.2;88.6;167
+phase4_exam;72.0;77.3;656
+phase4_finetuning;72.8;72.8;437
+phase5_evaluation;88.0;88.0;442
+phase6_agent;86.4;86.4;838
+phase7_flashcards;75.8;77.2;268
+phase8_personal;95.3;95.5;647
+phase9_summaries;96.6;96.6;292
+TOTAL;83.7;84.9;4162

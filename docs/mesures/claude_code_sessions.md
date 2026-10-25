@@ -1,0 +1,12 @@
+| Session | Début | Demande (résumé) | Tours | Appels API | Entrée | Cache (écriture / lecture) | Sortie | Modèle | Durée active | Lignes ajoutées |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `5d902768` | 2026-10-11 13:23 | la fonctionnalité "AI Course Tutor" | 11 | 106 | 212 | 774 263 / 20 381 507 | 207 805 | claude-opus-5-5 | 58.0 min | 5842 |
+| `2ab3ba04` | 2026-10-13 23:44 | phase « AI Personal Tutor » — comptes étudiants, base de données SQLite, cours privés, conversations sauvegardées, historique des examens e… | 5 | 185 | 370 | 894 844 / 52 457 402 | 300 718 | claude-opus-5-5 | 90.6 min | 6820 |
+| `01cad59c` | 2026-10-14 11:18 | phase « AI Study Companion » du cahier des charges — un agent LangGraph et une page unique (dossier backend/app/phase6_agent) | 1 | 94 | 188 | 335 915 / 21 994 422 | 174 341 | claude-opus-5-5 | 39.9 min | 4300 |
+| `c528cea3` | 2026-10-14 12:08 | fusionner la page « Tuteur de cours » dans la page « Study Companion », qui devient la page unique « Assistant » (cahier des charges : « on… | 1 | 70 | 140 | 193 969 / 11 081 576 | 69 653 | claude-opus-5-5 | 16.9 min | 267 |
+| `224dfdba` | 2026-10-14 12:42 | expérience de fine-tuning LoRA d'un modèle Hugging Face pour le style de tuteur adapté au niveau de l'étudiant (cahier des charges : « fine… | 1 | 28 | 56 | 106 644 / 2 754 899 | 54 476 | claude-opus-5-5 | 13.4 min | 1629 |
+| `20d36a24` | 2026-10-14 13:03 | Prépare les livrables du mini-projet (code, prompts et modèles) : 1. | 6 | 330 | 660 | 2 134 288 / 156 140 268 | 421 281 | claude-opus-5-5 | 157.4 min | 7747 |
+| `755606e7` | 2026-10-19 15:29 | Je veux refaire UNIQUEMENT la barre latérale de la page Assistant (components conversation-list, la liste « Mes cours » / course-selector e… | 1 | 34 | 68 | 122 619 / 3 574 377 | 57 585 | claude-opus-5-5 | 10.4 min | 1584 |
+| `b49e2763` | 2026-10-19 15:40 | Je veux refaire UNIQUEMENT la barre latérale de la page Assistant (components conversation-list, la liste « Mes cours » / course-selector e… | 4 | 134 | 270 | 402 329 / 32 332 573 | 218 226 | claude-opus-5-5 | 57.7 min | 3720 |
+| `fccd8465` | 2026-10-19 22:09 | produire tous les livrables de la grille d'évaluation et un rapport final LaTeX COMPLET et professionnel dans rapport/ à la racine du projet | 11 | 245 | 490 | 940 501 / 77 240 427 | 396 328 | claude-opus-5-5 | 116.4 min | 3514 |
+| **Total** | | 9 sessions | 41 | 1226 | 2 454 | 5 905 372 / 377 957 451 | 1 900 413 | | 560.7 min | 35423 |

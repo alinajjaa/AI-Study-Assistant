@@ -1,0 +1,18 @@
+appel;modele;temperature;max_tokens;format;jetons_entree;jetons_sortie;tronque;duree_s;debit_sortie_tok_s;debut_sortie
+tuteur;qwen2.5-7b-gpu;0.3;1024;texte;737;157;False;13.85;29.4;La couche de pooling dans un CNN sert à réduire la taille des cartes d'activation tout en 
+tuteur_suivi_historique;qwen2.5-7b-gpu;0.3;1024;texte;814;124;False;4.54;32.8;La convolution aide à extraire des caractéristiques importantes des images. Imagine que tu
+tuteur_hors_cours;qwen2.5-7b-gpu;0.3;1024;texte;662;11;False;0.87;37.2;Cette information n'est pas présente dans le cours.
+examen_generation_qcm;qwen2.5-7b-gpu;0.5;500;json_schema;735;109;False;4.1;31.7;"{""items"":[{""question"":""Le principal motif de la réduction de la complexité des réseaux de "
+examen_verification_qcm;qwen2.5-7b-gpu;0;100;json_schema;334;6;False;0.69;39.5;"{""answers"":[""A""]}"
+examen_generation_vrai_faux;qwen2.5-7b-gpu;0.5;300;json_schema;590;83;False;2.93;33.5;"{""items"":[{""statement"":""selon le cours, la limitation des paramètres d'un réseau neuronal "
+examen_verification_vrai_faux;qwen2.5-7b-gpu;0;60;json_schema;291;7;False;0.51;38.9;"{""answers"":[true,false]}"
+examen_generation_courte;qwen2.5-7b-gpu;0.5;300;json_schema;565;73;False;2.53;35.3;"{""items"":[{""question"":""Quelles sont les deux principales raisons pour lesquelles on réduit"
+examen_verification_courte;qwen2.5-7b-gpu;0;20;json_schema;323;6;False;0.46;39.8;"{""answers"":[true]}"
+examen_generation_ouverte;qwen2.5-7b-gpu;0.5;600;json_schema;903;165;False;6.16;30.5;"{""items"":[{""question"":""Selon le cours, comment l'architecture d'un réseau neuronal profond"
+examen_verification_ouverte;qwen2.5-7b-gpu;0;20;json_schema;673;6;False;0.8;39.9;"{""answers"":[true]}"
+flashcards_concepts;qwen2.5-7b-gpu;0.2;200;json_schema;629;42;False;1.74;36.3;"{""items"":[{""name"":""Artificielle"",""importance"":3},{""name"":""Apprentissage"",""importance"":3},{"
+flashcards_carte;qwen2.5-7b-gpu;0.4;250;json_schema;550;82;False;2.61;37.2;"{""items"":[{""concept"":""Artificielle"",""front"":""Qu'est-ce que les réseaux neuronaux artificie"
+resume_section_map;qwen2.5-7b-gpu;0.3;600;json_schema;1233;142;False;5.42;31.7;"{""title"":""Convolutionnel Neural Networks (CNN)"",""bullets"":[""Les CNN sont utilisées pour la"
+resume_section_map;qwen2.5-7b-gpu;0.5;600;json_schema;1233;120;False;3.9;33.4;"{""title"":""Convolutionnel Neural Networks (CNN)"",""bullets"":[""Les CNN sont utilisées pour la"
+agent_classification_repli;qwen2.5-7b-gpu;0;150;json_schema;289;27;False;1.14;38.1;"{""outil"":""generate_quiz"",""cours"":""CNN_intro"",""theme"":null,""nombre"":5,""difficulte"":null}"
+agent_choix_outil_tool_calling;qwen2.5-7b-gpu;0;défaut;tool calling;994;27;False;1.6;33.3;"[{""index"": 0, ""name"": ""generate_quiz"", ""arguments"": {""count"": 5, ""course"": ""CNN_intro""}}]"
