@@ -5,9 +5,9 @@
 .answer {
   padding: var(--space-5) var(--space-6);
   border: 1px solid var(--border);
-  border-radius: 4px var(--radius) var(--radius) var(--radius);
+  border-radius: 6px var(--radius-card) var(--radius-card) var(--radius-card);
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-card);
 }
 
 /* Texte du tuteur : taille et interligne de lecture longue */
@@ -64,7 +64,8 @@
 
 .off-note {
   margin: 0 0 var(--space-2);
-  font-family: var(--font-serif);
+  font-family: var(--font-accent);
+  font-size: 1.08em;
   font-style: italic;
   color: var(--text-muted);
 }

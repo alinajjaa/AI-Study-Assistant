@@ -1,5 +1,6 @@
 <header class="page-header">
-  <h1>Mes examens</h1>
+  <p class="kicker">Entraînement · Sujets notés sur 20</p>
+  <h1>Mes <span class="title-accent">examens</span></h1>
   <p class="lede">Tous les examens générés, à retélécharger quand tu veux.</p>
 </header>
 
@@ -41,7 +42,7 @@
         title="Aucun examen pour l'instant"
         text="Dans « Mes cours », clique sur « Examen » sous un cours (ou sur « Examen » sous la zone de saisie de l'Assistant) : un sujet noté sur 20, avec son corrigé, en PDF."
       >
-        <a class="btn" routerLink="/courses">Générer un examen</a>
+        <a class="btn btn--arrow" routerLink="/courses">Générer un examen</a>
       </app-empty-state>
     }
   } @else {

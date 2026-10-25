@@ -78,6 +78,22 @@
   :host(.app--signed-in) .app-main {
     padding: var(--space-4) var(--space-8) var(--space-12);
   }
+
+  /* Bouton lune/soleil : en haut à droite de la zone principale, comme sur les pages publiques */
+  :host(.app--signed-in) .header-actions {
+    position: fixed;
+    top: var(--space-4);
+    right: var(--space-6);
+    z-index: 30;
+  }
+
+  :host(.app--signed-in) .header-actions .theme-toggle--icon {
+    background: var(--bg);
+  }
+
+  :host(.app--signed-in) .app-tabs {
+    padding-right: var(--space-12);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -60,7 +60,7 @@
 
 .stat dd {
   margin: var(--space-1) 0 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
   font-size: var(--text-xl);
   font-weight: 600;
   font-variant-numeric: tabular-nums;

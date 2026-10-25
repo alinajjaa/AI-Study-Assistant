@@ -1,5 +1,6 @@
 <header class="page-header">
-  <h1>Flashcards</h1>
+  <p class="kicker">Révision · Recto / verso</p>
+  <h1>Flashcards <span class="title-accent">à réviser</span></h1>
   <p class="lede">Des cartes question / réponse tirées de tes cours, pour réviser les notions clés.</p>
 </header>
 
@@ -115,7 +116,7 @@
           <div class="setup__actions">
             <button
               type="button"
-              class="btn"
+              class="btn btn--arrow"
               [class.btn--ghost]="decks().length > 0"
               [disabled]="generating()"
               (click)="generate()"
@@ -153,7 +154,7 @@
             title="Aucun cours pour l'instant"
             text="Les flashcards sont tirées de tes cours. Importe d'abord un PDF dans l'Assistant."
           >
-            <a class="btn" routerLink="/companion">Importer un PDF</a>
+            <a class="btn btn--arrow" routerLink="/companion">Importer un PDF</a>
           </app-empty-state>
         }
       </div>

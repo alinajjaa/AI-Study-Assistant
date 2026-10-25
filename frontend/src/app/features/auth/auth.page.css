@@ -53,9 +53,9 @@
     top: 6rem;
     padding: var(--space-10);
     border: 1px solid var(--border);
-    border-radius: 24px;
+    border-radius: var(--radius-card);
     background: var(--surface);
-    box-shadow: 0 1px 2px rgb(17 19 22 / 4%), 0 24px 60px -24px rgb(17 19 22 / 18%);
+    box-shadow: var(--shadow-card-lg);
   }
 }
 
@@ -90,18 +90,6 @@
 .field {
   min-height: 3rem;
   padding: 0 var(--space-4);
-  border-radius: var(--radius);
-  border-color: var(--border-strong);
-  background: var(--surface);
-}
-
-.field:hover:not(:disabled):not(:focus-visible) {
-  border-color: var(--text-muted);
-}
-
-.field:focus-visible {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
 .alert {
@@ -115,14 +103,14 @@
   margin-top: var(--space-2);
   padding: 0 var(--space-6) 0 var(--space-8);
   border-radius: var(--radius-pill);
-  background: var(--text);
-  color: var(--bg);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
   font-size: var(--text-md);
   box-shadow: none;
 }
 
 .btn--pill:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--text) 82%, var(--accent));
+  background: var(--btn-primary-hover);
 }
 
 .btn__arrow {
@@ -181,6 +169,6 @@
 }
 
 .segment[aria-checked='true'] {
-  background: var(--text);
-  color: var(--bg);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
 }

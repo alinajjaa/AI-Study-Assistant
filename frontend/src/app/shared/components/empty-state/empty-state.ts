@@ -43,7 +43,7 @@ import { Icon, IconName } from '../icon/icon';
     }
     .empty__title {
       margin: 0;
-      font-family: var(--font-serif);
+      font-family: var(--font-heading);
       font-size: var(--text-lg);
       font-weight: 600;
       color: var(--text);

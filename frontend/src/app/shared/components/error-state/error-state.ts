@@ -36,7 +36,7 @@ import { Icon } from '../icon/icon';
       gap: var(--space-3);
       padding: var(--space-3) var(--space-4);
       border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius);
       background: var(--danger-soft);
       color: var(--danger);
     }

@@ -10,7 +10,8 @@
   (drop)="upload.onDrop($event)"
 >
   @if (home()) {
-    <h1 class="home__title">Que veux-tu réviser aujourd'hui&nbsp;?</h1>
+    <p class="kicker home__kicker">Tuteur · Examens · Flashcards · Résumés</p>
+    <h1 class="home__title">Que veux-tu <span class="title-accent">réviser aujourd'hui&nbsp;?</span></h1>
   } @else {
     <h1 class="sr-only">Assistant</h1>
   }

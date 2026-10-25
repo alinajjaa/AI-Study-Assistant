@@ -6,7 +6,7 @@
 .text {
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border);
-  border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg);
+  border-radius: 6px var(--radius-card) var(--radius-card) var(--radius-card);
   background: var(--surface);
 }
 

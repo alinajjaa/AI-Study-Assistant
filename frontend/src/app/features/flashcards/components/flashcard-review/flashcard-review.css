@@ -54,7 +54,7 @@
 .scene {
   perspective: 1200px;
   cursor: pointer;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
 }
 
 .scene:hover .face--front {
@@ -66,7 +66,7 @@
   display: grid;
   padding: 0;
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: none;
   box-shadow: none;
   min-height: 19rem;
@@ -87,9 +87,9 @@
   gap: var(--space-3);
   padding: var(--space-8);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-card);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
@@ -118,7 +118,7 @@
 .question,
 .answer {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
@@ -185,8 +185,9 @@
 .end {
   padding: var(--space-8) var(--space-4);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface);
+  box-shadow: var(--shadow-card);
   text-align: center;
 }
 
@@ -200,7 +201,7 @@
 }
 
 .score strong {
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
   font-size: var(--text-2xl);
   color: var(--accent);
 }

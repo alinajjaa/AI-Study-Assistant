@@ -57,7 +57,7 @@
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
   font-size: var(--text-lg);
   font-weight: 600;
   text-overflow: ellipsis;
@@ -131,7 +131,7 @@
 
 .import__title {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
   font-size: var(--text-lg);
   font-weight: 600;
 }

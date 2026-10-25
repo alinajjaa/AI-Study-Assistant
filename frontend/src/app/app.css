@@ -57,20 +57,19 @@
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: var(--shadow-sm);
+  border-radius: 50%;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
 }
 
 .brand__name {
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
   font-size: var(--text-lg);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: var(--heading-weight);
+  letter-spacing: var(--heading-tracking);
 }
 
-/* Non connecté : en-tête sans bordure, logo à l'encre, nom de marque dans la police des titres publics */
+/* Non connecté : en-tête sans bordure */
 :host(:not(.app--signed-in)) .app-header {
   border-bottom-color: transparent;
 }
@@ -79,17 +78,32 @@
   padding-block: var(--space-4);
 }
 
-:host(:not(.app--signed-in)) .brand__logo {
+/* Bouton lune/soleil : même bouton rond sur toutes les pages */
+.theme-toggle--icon {
+  border: 1px solid var(--border);
   border-radius: 50%;
-  background: var(--text);
-  color: var(--bg);
-  box-shadow: none;
 }
 
-:host(:not(.app--signed-in)) .brand__name {
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+.theme-toggle--icon:focus-visible {
+  border-radius: 50%;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Très petit écran connecté : logo seul, pour laisser la place à la bascule de thème et au bouton Menu */
+@media (max-width: 419px) {
+  :host(.app--signed-in) .brand__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 /* Info-bulle du rail */

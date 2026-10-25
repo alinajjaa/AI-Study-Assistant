@@ -26,13 +26,19 @@
   padding-bottom: 8vh;
 }
 
+.home__kicker {
+  justify-content: center;
+  margin-bottom: calc(-1 * var(--space-3));
+  text-align: center;
+}
+
 .home__title {
   margin: 0;
-  font-family: var(--font-serif);
-  font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.5rem);
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  line-height: 1.2;
+  font-family: var(--font-heading);
+  font-size: clamp(1.9rem, 1.2rem + 2.4vw, 3rem);
+  font-weight: var(--heading-weight);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   text-align: center;
 }
 

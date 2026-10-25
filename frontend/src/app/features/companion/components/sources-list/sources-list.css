@@ -111,7 +111,7 @@
 
 .excerpt {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: var(--text-md);
   line-height: 1.55;
   white-space: pre-line;

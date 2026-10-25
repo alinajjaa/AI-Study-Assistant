@@ -61,7 +61,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
       top: 3.75rem;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-family: var(--font-serif);
+      font-family: var(--font-heading);
       font-size: var(--text-xl);
       font-weight: 600;
       color: var(--text);

@@ -45,7 +45,7 @@ import { ConfirmService } from './confirm.service';
       width: min(28rem, calc(100vw - 2rem));
       padding: 0;
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-card);
       background: var(--surface);
       color: var(--text);
       box-shadow: var(--shadow-lg);

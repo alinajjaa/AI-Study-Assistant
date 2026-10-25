@@ -70,9 +70,9 @@ import { Icon } from '../icon/icon';
       gap: var(--space-3);
       padding: var(--space-4);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-card);
       background: var(--surface);
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--shadow-card);
     }
     .progress--compact {
       gap: var(--space-2);

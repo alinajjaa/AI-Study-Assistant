@@ -5,15 +5,15 @@
 .composer {
   padding: var(--space-3);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-card);
   transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
 }
 
 .composer:focus-within {
   border-color: var(--accent);
-  box-shadow: var(--shadow), 0 0 0 3px var(--accent-soft);
+  box-shadow: var(--shadow-card), 0 0 0 4px var(--accent-soft);
 }
 
 .input {

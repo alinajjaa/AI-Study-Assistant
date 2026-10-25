@@ -1,7 +1,8 @@
 /* =====================================================================
-   Système de design — « calme et académique »
-   Papier blanc cassé, encre bleu nuit, un seul accent vert sapin.
-   Titres en Fraunces, texte en Inter. Lisibilité avant tout (longues révisions).
+   Système de design — charte de la page de connexion (docs/charte-graphique.md)
+   Fond blanc, encre presque noire, un seul accent bleu. Titres très gras en Space Grotesk,
+   accent des titres en Instrument Serif italique bleu, libellés en JetBrains Mono capitales espacées,
+   texte courant en Inter.
 
    Thème : clair par défaut ; sombre si le système le demande (prefers-color-scheme) ou si l'étudiant le choisit
    (attribut data-theme sur <html>, mémorisé par ThemeService). Toute couleur passe par ces jetons :
@@ -11,46 +12,52 @@
   color-scheme: light;
 
   /* Couleurs — clair */
-  --bg: #faf8f3;
+  --bg: #ffffff;
   --surface: #ffffff;
-  --surface-alt: #f2efe7;
+  --surface-alt: #f4f5f7;
   --surface-raised: #ffffff;
-  --border: #e4ded2;
-  --border-strong: #cfc6b4;
-  --text: #1a2233;
-  --text-muted: #5a6170;
-  --accent: #1f5c4a;
-  --accent-hover: #174636;
-  --accent-soft: #e3eee8;
-  --accent-strong-soft: #c9dfd3;
+  --field-bg: #f3f6fa;
+  --border: #e7e8ec;
+  --border-strong: #cfd2d8;
+  --text: #111316;
+  --text-muted: #565c66;
+  --accent: #0a5fd6;
+  --accent-hover: #084db0;
+  --accent-soft: #e8f0fc;
+  --accent-strong-soft: #cfe0f8;
   --on-accent: #ffffff;
-  --success: #1f6b45;
-  --success-soft: #e1f0e6;
-  --danger: #a23a2f;
-  --danger-hover: #84291f;
-  --danger-soft: #f8e5e1;
+  /* Bouton principal : pilule à l'encre (noire en clair, blanche en sombre) */
+  --btn-primary-bg: #111316;
+  --btn-primary-hover: #1d2b45;
+  --btn-primary-text: #ffffff;
+  --success: #1a7a46;
+  --success-soft: #e3f4ea;
+  --danger: #b4232a;
+  --danger-hover: #921a20;
+  --danger-soft: #fcebec;
   --warning: #8a5a00;
-  --warning-soft: #fbf0dc;
-  --info: #2c4f7c;
-  --info-soft: #e6edf6;
-  --off-bg: #f4f1ea;
-  --off-border: #d8cfbd;
-  --bubble-student: #ece7dc;
-  --focus-ring: #1f5c4a;
-  --overlay: rgb(26 34 51 / 45%);
-  --skeleton: #ece7dc;
-  --skeleton-shine: #f6f3ec;
-  --chart-1: #1f5c4a;
-  --chart-2: #8fb8a3;
-  --chart-track: #ece7dc;
+  --warning-soft: #fdf2dc;
+  --info: #0a5fd6;
+  --info-soft: #e8f0fc;
+  --off-bg: #f6f7f9;
+  --off-border: #d5d9e0;
+  --bubble-student: #f1f3f7;
+  --focus-ring: #0a5fd6;
+  --overlay: rgb(17 19 22 / 45%);
+  --skeleton: #eceef2;
+  --skeleton-shine: #f7f8fa;
+  --chart-1: #0a5fd6;
+  --chart-2: #9cc0f0;
+  --chart-track: #eceef2;
 
   /* Typographie */
   --font-serif: 'Fraunces', 'Source Serif 4', Georgia, 'Times New Roman', serif;
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace;
-  /* Pages publiques (connexion, inscription) : titres, accent italique, étiquettes */
+  /* Titres très gras, accent serif italique, libellés en capitales espacées */
   --font-display: 'Space Grotesk', var(--font-sans);
-  --font-accent: 'Instrument Serif', var(--font-serif);
+  --font-heading: var(--font-display);
+  --font-accent: 'Instrument Serif', Georgia, 'Times New Roman', serif;
   --font-label: 'JetBrains Mono', var(--font-mono);
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -61,8 +68,11 @@
   --text-2xl: 1.75rem;
   --text-3xl: 2.25rem;
   --leading: 1.65;
-  --leading-tight: 1.25;
+  --leading-tight: 1.2;
   --measure: 68ch;
+  --heading-weight: 700;
+  --heading-tracking: -0.02em;
+  --label-tracking: 0.2em;
 
   /* Espacements (4 / 8 / 12 / 16 / 24 / 32, plus quelques intermédiaires) */
   --space-1: 0.25rem;
@@ -79,10 +89,15 @@
   --radius-sm: 8px;
   --radius: 12px;
   --radius-lg: 16px;
+  /* Cartes : même rayon que la carte de connexion */
+  --radius-card: 24px;
   --radius-pill: 999px;
-  --shadow-sm: 0 1px 2px rgb(26 34 51 / 5%);
-  --shadow: 0 1px 2px rgb(26 34 51 / 5%), 0 6px 18px rgb(26 34 51 / 6%);
-  --shadow-lg: 0 2px 6px rgb(26 34 51 / 8%), 0 18px 48px rgb(26 34 51 / 16%);
+  --shadow-sm: 0 1px 2px rgb(17 19 22 / 4%);
+  --shadow: 0 1px 2px rgb(17 19 22 / 4%), 0 8px 24px -12px rgb(17 19 22 / 12%);
+  --shadow-lg: 0 2px 6px rgb(17 19 22 / 6%), 0 24px 60px -24px rgb(17 19 22 / 22%);
+  /* Carte : ombre légère en clair, remplacée par la seule bordure en sombre */
+  --shadow-card: 0 1px 2px rgb(17 19 22 / 4%), 0 12px 32px -20px rgb(17 19 22 / 14%);
+  --shadow-card-lg: 0 1px 2px rgb(17 19 22 / 4%), 0 24px 60px -24px rgb(17 19 22 / 18%);
   --content-width: 1180px;
   --sidebar-width: 300px;
   /* Barre latérale du shell : ouverte, repliée en rail d'icônes */
@@ -101,108 +116,11 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --bg: #13171d;
-    --surface: #1a1f27;
-    --surface-alt: #222833;
-    --surface-raised: #202630;
-    --border: #2d3440;
-    --border-strong: #424b5a;
-    --text: #ebe7de;
-    --text-muted: #a8adb6;
-    --accent: #86c5a8;
-    --accent-hover: #a3d5bd;
-    --accent-soft: #1d3329;
-    --accent-strong-soft: #284838;
-    --on-accent: #0e1c16;
-    --success: #8fd1a8;
-    --success-soft: #1c3326;
-    --danger: #f0a197;
-    --danger-hover: #f6bdb5;
-    --danger-soft: #3a2220;
-    --warning: #e7bd73;
-    --warning-soft: #3a2f1c;
-    --info: #a7c1ea;
-    --info-soft: #1d2840;
-    --off-bg: #1c2129;
-    --off-border: #3a4150;
-    --bubble-student: #262d38;
-    --focus-ring: #86c5a8;
-    --overlay: rgb(0 0 0 / 60%);
-    --skeleton: #252c37;
-    --skeleton-shine: #2e3644;
-    --chart-1: #86c5a8;
-    --chart-2: #4f7d68;
-    --chart-track: #2a313d;
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 30%);
-    --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 25%);
-    --shadow-lg: 0 2px 6px rgb(0 0 0 / 35%), 0 18px 48px rgb(0 0 0 / 45%);
-  }
-}
-
-/* Couleurs — sombre (choix de l'étudiant) : mêmes valeurs, pour que la bascule l'emporte dans les deux sens */
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --bg: #13171d;
-  --surface: #1a1f27;
-  --surface-alt: #222833;
-  --surface-raised: #202630;
-  --border: #2d3440;
-  --border-strong: #424b5a;
-  --text: #ebe7de;
-  --text-muted: #a8adb6;
-  --accent: #86c5a8;
-  --accent-hover: #a3d5bd;
-  --accent-soft: #1d3329;
-  --accent-strong-soft: #284838;
-  --on-accent: #0e1c16;
-  --success: #8fd1a8;
-  --success-soft: #1c3326;
-  --danger: #f0a197;
-  --danger-hover: #f6bdb5;
-  --danger-soft: #3a2220;
-  --warning: #e7bd73;
-  --warning-soft: #3a2f1c;
-  --info: #a7c1ea;
-  --info-soft: #1d2840;
-  --off-bg: #1c2129;
-  --off-border: #3a4150;
-  --bubble-student: #262d38;
-  --focus-ring: #86c5a8;
-  --overlay: rgb(0 0 0 / 60%);
-  --skeleton: #252c37;
-  --skeleton-shine: #2e3644;
-  --chart-1: #86c5a8;
-  --chart-2: #4f7d68;
-  --chart-track: #2a313d;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 30%);
-  --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 25%);
-  --shadow-lg: 0 2px 6px rgb(0 0 0 / 35%), 0 18px 48px rgb(0 0 0 / 45%);
-}
-
-/* Pages publiques (non connecté) : blanc, encre presque noire, accent bleu.
-   Posé sur app-root : prioritaire sur les jetons de :root, le reste de l'application garde son thème. */
-app-root:not(.app--signed-in) {
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --surface-alt: #f4f5f7;
-  --border: #e7e8ec;
-  --border-strong: #cfd2d8;
-  --text: #111316;
-  --text-muted: #565c66;
-  --accent: #0a5fd6;
-  --accent-hover: #084db0;
-  --accent-soft: #e8f0fc;
-  --accent-strong-soft: #cfe0f8;
-  --on-accent: #ffffff;
-  --focus-ring: #0a5fd6;
-  background: var(--bg);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) app-root:not(.app--signed-in) {
     --bg: #0c0e12;
     --surface: #13161c;
     --surface-alt: #1a1e26;
+    --surface-raised: #181c23;
+    --field-bg: #1c212a;
     --border: #262b35;
     --border-strong: #3a404c;
     --text: #f1f2f4;
@@ -212,14 +130,44 @@ app-root:not(.app--signed-in) {
     --accent-soft: #14233b;
     --accent-strong-soft: #1d355a;
     --on-accent: #0c0e12;
+    --btn-primary-bg: #f1f2f4;
+    --btn-primary-hover: #d6e6ff;
+    --btn-primary-text: #0c0e12;
+    --success: #7fd3a1;
+    --success-soft: #12291c;
+    --danger: #ff9b95;
+    --danger-hover: #ffbab6;
+    --danger-soft: #331618;
+    --warning: #f0c274;
+    --warning-soft: #2e2412;
+    --info: #8dbcff;
+    --info-soft: #14233b;
+    --off-bg: #15181f;
+    --off-border: #333a46;
+    --bubble-student: #1d222b;
     --focus-ring: #6aa8ff;
+    --overlay: rgb(0 0 0 / 65%);
+    --skeleton: #1a1e26;
+    --skeleton-shine: #252a34;
+    --chart-1: #6aa8ff;
+    --chart-2: #2f5f9e;
+    --chart-track: #1f242d;
+    --shadow-sm: none;
+    --shadow: 0 8px 24px rgb(0 0 0 / 35%);
+    --shadow-lg: 0 18px 48px rgb(0 0 0 / 55%);
+    --shadow-card: none;
+    --shadow-card-lg: none;
   }
 }
 
-:root[data-theme='dark'] app-root:not(.app--signed-in) {
+/* Couleurs — sombre (choix de l'étudiant) : mêmes valeurs, pour que la bascule l'emporte dans les deux sens */
+:root[data-theme='dark'] {
+  color-scheme: dark;
   --bg: #0c0e12;
   --surface: #13161c;
   --surface-alt: #1a1e26;
+  --surface-raised: #181c23;
+  --field-bg: #1c212a;
   --border: #262b35;
   --border-strong: #3a404c;
   --text: #f1f2f4;
@@ -229,7 +177,33 @@ app-root:not(.app--signed-in) {
   --accent-soft: #14233b;
   --accent-strong-soft: #1d355a;
   --on-accent: #0c0e12;
+  --btn-primary-bg: #f1f2f4;
+  --btn-primary-hover: #d6e6ff;
+  --btn-primary-text: #0c0e12;
+  --success: #7fd3a1;
+  --success-soft: #12291c;
+  --danger: #ff9b95;
+  --danger-hover: #ffbab6;
+  --danger-soft: #331618;
+  --warning: #f0c274;
+  --warning-soft: #2e2412;
+  --info: #8dbcff;
+  --info-soft: #14233b;
+  --off-bg: #15181f;
+  --off-border: #333a46;
+  --bubble-student: #1d222b;
   --focus-ring: #6aa8ff;
+  --overlay: rgb(0 0 0 / 65%);
+  --skeleton: #1a1e26;
+  --skeleton-shine: #252a34;
+  --chart-1: #6aa8ff;
+  --chart-2: #2f5f9e;
+  --chart-track: #1f242d;
+  --shadow-sm: none;
+  --shadow: 0 8px 24px rgb(0 0 0 / 35%);
+  --shadow-lg: 0 18px 48px rgb(0 0 0 / 55%);
+  --shadow-card: none;
+  --shadow-card-lg: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -275,12 +249,11 @@ h2,
 h3,
 h4 {
   margin: 0;
-  font-family: var(--font-serif);
-  font-weight: 600;
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight);
   line-height: var(--leading-tight);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--heading-tracking);
   text-wrap: balance;
-  font-optical-sizing: auto;
 }
 
 p {
@@ -324,36 +297,51 @@ svg {
 }
 
 /* ============================ En-têtes de page ============================ */
+/* Libellé de section (.kicker), titre très gras, accent serif italique (.title-accent), chapeau (.lede) */
 .page-header {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  margin-bottom: var(--space-6);
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
 }
 
 .page-header h1 {
-  font-size: clamp(var(--text-2xl), 1.4rem + 1.2vw, var(--text-3xl));
+  font-size: clamp(var(--text-2xl), 1.3rem + 1.8vw, 2.75rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+/* Accent d'un titre : serif italique bleu (« et transformé en entraînement. ») */
+.title-accent {
+  font-family: var(--font-accent);
+  font-size: 1.08em;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  color: var(--accent);
 }
 
 .eyebrow {
   margin: 0;
+  font-family: var(--font-label);
   font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: var(--label-tracking);
   text-transform: uppercase;
   color: var(--accent);
 }
 
-/* Étiquette en capitales espacées précédée d'un point d'accent (pages publiques) */
+/* Libellé de section : capitales espacées précédées d'un point bleu (« • TUTEUR · EXAMENS ») */
 .kicker {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-3);
   margin: 0;
   font-family: var(--font-label);
   font-size: var(--text-xs);
   font-weight: 500;
-  letter-spacing: 0.2em;
+  line-height: 1.5;
+  letter-spacing: var(--label-tracking);
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -361,6 +349,8 @@ svg {
 .kicker::before {
   content: '';
   flex: none;
+  /* Centré sur la première ligne, même si le libellé passe à la ligne */
+  margin-top: calc((1.5em - 6px) / 2);
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -380,9 +370,9 @@ svg {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-5);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-6);
 }
 
 .card--flat {
@@ -402,16 +392,16 @@ svg {
   gap: var(--space-3);
 }
 
-/* Boutons */
+/* Boutons : principal = pilule à l'encre (noire en clair, blanche en sombre) */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   min-height: 2.5rem;
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-5);
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   font: inherit;
   font-size: var(--text-sm);
   font-weight: 600;
@@ -419,9 +409,9 @@ svg {
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: var(--shadow-sm);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  box-shadow: none;
   transition:
     background-color var(--duration) var(--ease),
     border-color var(--duration) var(--ease),
@@ -430,7 +420,37 @@ svg {
 }
 
 .btn:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: var(--btn-primary-hover);
+}
+
+/* Flèche → des appels à l'action (bouton principal, lien d'action) */
+.btn--arrow::after,
+.link-arrow::after {
+  content: '→';
+  font-family: var(--font-sans);
+  font-weight: 500;
+  transition: transform var(--duration) var(--ease);
+}
+
+.btn--arrow:hover:not(:disabled)::after,
+.link-arrow:hover::after {
+  transform: translateX(3px);
+}
+
+/* Lien d'action : souligné fin, suivi d'une flèche */
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
+}
+
+.link-arrow:hover {
+  color: var(--accent);
 }
 
 .btn:active:not(:disabled) {
@@ -445,7 +465,7 @@ svg {
 
 /* Secondaire : contour neutre (« Annuler », actions de liste) */
 .btn--ghost {
-  background: var(--surface);
+  background: transparent;
   color: var(--text);
   border-color: var(--border-strong);
   box-shadow: none;
@@ -453,6 +473,7 @@ svg {
 
 .btn--ghost:hover:not(:disabled) {
   background: var(--surface-alt);
+  border-color: var(--text-muted);
   color: var(--text);
 }
 
@@ -470,7 +491,7 @@ svg {
 
 .btn--danger {
   background: var(--danger);
-  color: var(--surface);
+  color: var(--bg);
 }
 
 .btn--danger:hover:not(:disabled) {
@@ -484,8 +505,8 @@ svg {
 }
 
 .btn--lg {
-  min-height: 3rem;
-  padding: var(--space-3) var(--space-6);
+  min-height: 3.25rem;
+  padding: var(--space-3) var(--space-8);
   font-size: var(--text-md);
 }
 
@@ -558,13 +579,14 @@ svg {
 }
 
 /* Champs de formulaire */
+/* Champ : fond gris-bleu, coins arrondis, anneau de focus bleu */
 .field {
   width: 100%;
-  min-height: 2.5rem;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--field-bg);
   color: var(--text);
   font: inherit;
   transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
@@ -594,14 +616,14 @@ select.field {
   opacity: 0.85;
 }
 
-.field:hover:not(:disabled) {
-  border-color: var(--text-muted);
+.field:hover:not(:disabled):not(:focus-visible) {
+  border-color: var(--border-strong);
 }
 
 .field:focus-visible {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
 .field:disabled {
@@ -696,17 +718,17 @@ select.field {
 .segmented {
   display: flex;
   gap: 2px;
-  padding: 3px;
+  padding: 4px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-alt);
+  border-radius: var(--radius-pill);
+  background: var(--field-bg);
 }
 
 .segment {
   flex: 1;
   min-height: 2.25rem;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text-muted);
   font: inherit;
@@ -721,9 +743,8 @@ select.field {
 }
 
 .segment[aria-checked='true'] {
-  background: var(--surface);
-  color: var(--accent);
-  box-shadow: var(--shadow-sm), 0 0 0 1px var(--border);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
 }
 
 .segment:disabled {

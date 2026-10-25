@@ -8,7 +8,7 @@ import { Component } from '@angular/core';
       <p class="kicker">Tuteur · Examens · Flashcards · Résumés</p>
       <h1 class="intro__title">
         Ton cours, expliqué, résumé
-        <span class="intro__accent">et transformé en entraînement.</span>
+        <span class="intro__accent title-accent">et transformé en entraînement.</span>
       </h1>
       <p class="intro__lede">
         Importe un PDF de cours : l'assistant répond uniquement à partir de son contenu et cite ses pages,
@@ -34,13 +34,7 @@ import { Component } from '@angular/core';
     .intro__accent {
       display: block;
       margin-top: 0.06em;
-      font-family: var(--font-accent);
-      font-size: 1.08em;
-      font-style: italic;
-      font-weight: 400;
       line-height: 1;
-      letter-spacing: -0.015em;
-      color: var(--accent);
     }
     .intro__lede {
       margin: 0;

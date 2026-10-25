@@ -5,9 +5,9 @@
 .progress {
   padding: var(--space-4) var(--space-5);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
 }
 
 .progress__header {
@@ -52,7 +52,7 @@
 
 .stat dd {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
   font-size: var(--text-xl);
   font-variant-numeric: tabular-nums;
 }
