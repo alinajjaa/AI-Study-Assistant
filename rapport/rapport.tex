@@ -553,7 +553,7 @@ Agent & LangGraph~\cite{langgraph}, \code{langchain-openai} & choix et enchaîne
 Suivi & MLflow (stockage SQLite) & un run par génération, traces de l'agent \\
 PDF & PyMuPDF (lecture), ReportLab (examens) & extraction page par page, mise en page \\
 Fine-tuning & Transformers, PEFT, TRL, bitsandbytes (Colab T4) & QLoRA de Qwen2.5-1.5B \\
-Déploiement & Docker Compose, nginx, Hugging Face Spaces & démonstration locale et publique \\
+Déploiement & Docker Compose, nginx, tunnel Cloudflare & démonstration locale et publique \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -779,7 +779,7 @@ produite.
 \midrule
 Développement & Ollama local ou Groq & Docker (6333) & développement, tests, benchmark \\
 Docker Compose & Groq (ou Ollama de la machine) & conteneur & démonstration locale complète, port 8080 \\
-Hugging Face Spaces & Groq & intégré (\code{QDRANT_PATH}) & démonstration publique, port 7860 \\
+Hugging Face Spaces & Groq & intégré (\code{QDRANT_PATH}) & image prête, non publiée, port 7860 \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -791,6 +791,12 @@ root et ne contient aucun secret (\code{.env}, bases et PDF exclus par \code{.do
 l'offre gratuite limite à 30 requêtes et 8~000 jetons par minute : le client attend et réessaie sur les
 erreurs 429, et le proxy nginx accepte des requêtes de 20 minutes. Le tableau~\ref{tab:deploiement}
 compare les trois modes.
+
+\paragraph{Déploiement réalisé.} L'application a été déployée avec Docker Compose : les trois conteneurs
+(Qdrant, backend, frontend nginx) sont \emph{healthy}. Elle a été exposée publiquement par un tunnel
+Cloudflare (\code{cloudflared}), qui fournit un lien https temporaire, et testée depuis un navigateur le
+25/10 (commande en annexe~\ref{ann:installation}). Les Spaces Docker de Hugging Face étant devenus payants,
+l'image \code{deploy/hf-space/} est prête mais n'a pas été publiée.
 
 % =============================================================================================
 %  CHAPITRE 3 — MODULES ET INTÉGRATION DE L'IA
@@ -1959,9 +1965,11 @@ justification dans \code{backend/bandit.yaml} ; \code{try / except / pass} corri
 \paragraph{Dépendances.} \code{pip-audit} sur les 158 paquets épinglés de \code{requirements.txt} : aucune
 vulnérabilité connue. \code{npm audit} : 0 vulnérabilité.
 
-Le 25/10, le job d'audit de la CI a détecté 55 vulnérabilités publiées après l'audit du 20/10, dans
-6 paquets. Ils ont été mis à jour et épinglés (tableau~\ref{tab:maj-deps}) ; les 212 tests restent verts,
-ruff et bandit ne relèvent aucun constat, et \code{pip-audit} affiche 0 vulnérabilité.
+Le 25/10, le job d'audit de la CI a détecté 56 vulnérabilités publiées après l'audit du 20/10 : 55 par
+\code{pip-audit} dans 6 paquets Python, et 1 par \code{npm audit}, de gravité haute, dans \code{zod}
+(versions antérieures à 4.6.6, GHSA-mrhx-c7xc-m3w5). Toutes ont été corrigées par mise à jour
+(tableau~\ref{tab:maj-deps}) ; les 212 tests restent verts, ruff et bandit ne relèvent aucun constat, et
+\code{pip-audit} comme \code{npm audit} affichent 0 vulnérabilité.
 
 \begin{table}[htbp]
 \centering
@@ -1978,6 +1986,7 @@ ruff et bandit ne relèvent aucun constat, et \code{pip-audit} affiche 0 vulnér
 \code{mlflow} (+ \code{mlflow-skinny}, \code{mlflow-tracing}) & 3.17.1 & 3.17.2 \\
 \code{pypdf} & 6.20.0 & 6.21.2 \\
 \code{pillow} & 12.3.0 & 13.0.0 \\
+\code{zod} (npm, frontend) & $<$ 4.6.6 & 4.6.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2948,8 +2957,7 @@ commun.
 L'équipe a gardé la main sur l'historique Git : 16 des 22 demandes longues envoyées à Claude Code
 interdisaient explicitement toute commande git, et l'outil n'a jamais modifié le dépôt (deux commandes en
 lecture seule ont été lancées malgré la règle et signalées par l'outil). L'intégration continue vérifie
-chaque \emph{push} et chaque \emph{pull request}. Les statistiques du dépôt sont fournies par l'équipe
-(tableau~\ref{tab:git}).
+chaque \emph{push} et chaque \emph{pull request}. Le tableau~\ref{tab:git} résume l'historique du dépôt.
 
 \begin{table}[htbp]
 \centering
@@ -2959,10 +2967,10 @@ chaque \emph{push} et chaque \emph{pull request}. Les statistiques du dépôt so
 \toprule
 \textbf{Mesure} & \textbf{Valeur} \\
 \midrule
-Nombre de commits & [statistiques Git fournies par l'équipe] \\
-Commits par membre (\code{git shortlog -sn}) & [statistiques Git fournies par l'équipe] \\
-Lignes ajoutées et supprimées (\code{git log --stat}) & [statistiques Git fournies par l'équipe] \\
-Branches de fonctionnalité & [statistiques Git fournies par l'équipe] \\
+Nombre de commits & 24 \\
+Commits par auteur (\code{git shortlog -sn}) & Najjaa Ali : 24 \\
+Intégration continue (GitHub Actions) & 3 jobs verts : Backend (ruff, bandit, pytest), Frontend
+(ng test, ng build), Audit des dépendances (pip-audit, npm audit) \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -3540,6 +3548,9 @@ npx ng build
 docker compose up --build -d
 docker compose ps          # qdrant, backend et frontend « healthy » ; http://localhost:8080
 docker compose down        # arrêter (volumes gardés)
+
+# exposition publique par un tunnel Cloudflare (lien https temporaire affiché dans la console)
+cloudflared tunnel --url http://localhost:8080
 
 .\deploy\hf-space\prepare-space.ps1 -Destination ..\ai-study-assistant-space
 # secrets du Space : GROQ_API_KEY, JWT_SECRET (nouveau, propre au Space)

@@ -3,5 +3,8 @@ docker compose up --build -d
 docker compose ps          # qdrant, backend et frontend « healthy » ; http://localhost:8080
 docker compose down        # arrêter (volumes gardés)
 
+# exposition publique par un tunnel Cloudflare (lien https temporaire affiché dans la console)
+cloudflared tunnel --url http://localhost:8080
+
 .\deploy\hf-space\prepare-space.ps1 -Destination ..\ai-study-assistant-space
 # secrets du Space : GROQ_API_KEY, JWT_SECRET (nouveau, propre au Space)
