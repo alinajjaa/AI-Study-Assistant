@@ -1,0 +1,154 @@
+:host {
+  position: relative;
+  display: block;
+}
+
+/* Avatar + prénom ; dans le rail, seul l'avatar reste visible (à 14 px du bord, comme les autres icônes) */
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 var(--space-2) 0 6px;
+  overflow: hidden;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--duration) var(--ease);
+}
+
+.trigger:hover,
+.trigger[aria-expanded='true'] {
+  background: var(--surface-alt);
+}
+
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.trigger__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trigger__chevron {
+  color: var(--text-muted);
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: fixed;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  min-width: 15rem;
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-lg);
+  animation: menu-in var(--duration) var(--ease);
+}
+
+.menu__email {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menu__item app-icon {
+  color: var(--text-muted);
+}
+
+.menu__item:hover,
+.menu__item:focus-visible {
+  background: var(--surface-alt);
+}
+
+.menu__item:focus-visible {
+  outline-offset: -2px;
+}
+
+.menu__note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.menu__note app-icon {
+  margin-top: 2px;
+  color: var(--accent);
+}
+
+/* Sous 1024 px (tiroir) : au-dessus du bouton */
+.menu--above {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  left: 0;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .trigger__label,
+  .trigger__chevron {
+    transition: opacity var(--shell-speed, 200ms) var(--ease);
+  }
+
+  :host-context(.app--collapsed) .trigger__label,
+  :host-context(.app--collapsed) .trigger__chevron {
+    opacity: 0;
+  }
+}

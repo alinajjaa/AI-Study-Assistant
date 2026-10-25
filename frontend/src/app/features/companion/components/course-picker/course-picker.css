@@ -1,0 +1,134 @@
+:host {
+  position: relative;
+  display: inline-block;
+  min-width: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 16rem;
+  min-height: 2rem;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-alt);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color var(--duration) var(--ease), background-color var(--duration) var(--ease);
+}
+
+.chip app-icon {
+  color: var(--text-muted);
+}
+
+.chip:hover:not(:disabled),
+.chip[aria-expanded='true'] {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.chip:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.chip__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Menu ouvert vers le haut : la zone de saisie est en bas de l'écran (ou au centre sur l'accueil) */
+.menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  width: 17rem;
+  max-height: min(22rem, 60vh);
+  overflow-y: auto;
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-lg);
+  animation: menu-in var(--duration) var(--ease);
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu__item:hover,
+.menu__item:focus-visible {
+  background: var(--surface-alt);
+}
+
+.menu__item:focus-visible {
+  outline-offset: -2px;
+}
+
+.menu__item[aria-checked='true'] {
+  font-weight: 600;
+}
+
+.menu__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.all {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--surface-alt);
+  color: var(--text-muted);
+}
+
+.menu__item--import {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.check {
+  color: var(--accent);
+}
+
+.menu__separator {
+  height: 1px;
+  margin: var(--space-1) var(--space-2);
+  background: var(--border);
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}

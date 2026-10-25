@@ -1,0 +1,176 @@
+/*
+ * Barre latérale : haut (nouvelle conversation, recherche), « Récents » qui défile seul, compte en bas.
+ * Icônes à 11 px du bord des lignes : alignées sur le bouton de bascule et immobiles pendant l'animation.
+ */
+:host {
+  --row-icon-inset: 11px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Ligne du haut : icône + libellé (le libellé s'estompe dans le rail) */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0 var(--row-icon-inset);
+  overflow: hidden;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+
+.row:hover {
+  background: var(--surface-alt);
+}
+
+.new app-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+
+.row__label {
+  white-space: nowrap;
+}
+
+/* Ligne « Rechercher » : champ discret, sans cadre tant qu'on ne s'en sert pas */
+.search {
+  position: relative;
+}
+
+.search__icon {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--row-icon-inset) + 1px);
+  color: var(--text-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.search__field {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0 var(--space-3) 0 calc(var(--row-icon-inset) + 18px + var(--space-3));
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  transition: background-color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+.search__field::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.search__field:hover {
+  background: var(--surface-alt);
+}
+
+.search__field:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Bouton du rail : invisible quand la barre est ouverte */
+.search__rail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2.5rem;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.recents {
+  flex: 1;
+  min-height: 0;
+  margin-inline: calc(-1 * var(--space-2));
+  padding: var(--space-2) var(--space-2) 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.load-error {
+  margin: 0 0 var(--space-2);
+  padding: 0 var(--space-3);
+  color: var(--danger);
+  font-size: var(--text-xs);
+}
+
+.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.foot {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+/* ------------- À partir de 1024 px : largeurs fixes et rail (barre repliée) ------------- */
+@media (min-width: 1024px) {
+  /* Largeur fixe : les titres ne se replient jamais pendant l'animation, ils sont seulement coupés */
+  .recents__inner {
+    width: calc(var(--shell-width) - 1px - 2 * var(--space-2));
+  }
+
+  .row__label,
+  .search__field,
+  .recents {
+    transition:
+      opacity var(--shell-speed, 200ms) var(--ease),
+      visibility 0s;
+  }
+
+  :host-context(.app--collapsed) .row__label {
+    opacity: 0;
+  }
+
+  :host-context(.app--collapsed) .search__field,
+  :host-context(.app--collapsed) .search__icon,
+  :host-context(.app--collapsed) .recents {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--shell-speed, 200ms) var(--ease),
+      visibility 0s linear var(--shell-speed, 200ms);
+  }
+
+  :host-context(.app--collapsed) .search__rail {
+    visibility: visible;
+    opacity: 1;
+  }
+}

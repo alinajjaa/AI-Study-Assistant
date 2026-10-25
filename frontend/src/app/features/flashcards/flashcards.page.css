@@ -2,19 +2,6 @@
   display: block;
 }
 
-.page-header {
-  margin-bottom: var(--space-6);
-}
-
-.page-header h1 {
-  font-size: var(--text-2xl);
-}
-
-.lede {
-  margin: var(--space-1) 0 0;
-  color: var(--text-muted);
-}
-
 .layout {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
@@ -24,8 +11,8 @@
 
 .sidebar {
   position: sticky;
-  top: 5rem;
-  max-height: calc(100dvh - 6rem);
+  top: var(--space-6);
+  max-height: calc(100dvh - var(--space-12));
   overflow-y: auto;
 }
 
@@ -126,10 +113,6 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-3);
-}
-
-.empty a {
-  color: var(--accent);
 }
 
 @media (max-width: 800px) {

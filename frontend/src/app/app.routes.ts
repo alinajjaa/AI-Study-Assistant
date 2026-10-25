@@ -42,6 +42,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/exams/exams.page').then((m) => m.ExamsPage),
   },
   {
+    path: 'courses',
+    title: 'Mes cours · AI Study Assistant',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/courses/courses.page').then((m) => m.CoursesPage),
+  },
+  {
     path: 'profile',
     title: 'Mon profil · AI Study Assistant',
     canActivate: [authGuard],

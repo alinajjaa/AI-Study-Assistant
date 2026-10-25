@@ -22,18 +22,21 @@ export function toolLabel(tool: string | null): string | null {
   return tool !== null && tool in TOOL_LABELS ? TOOL_LABELS[tool as CompanionTool] : null;
 }
 
-/** Boutons rapides : ils envoient directement une demande pré-remplie. */
+/**
+ * Actions rapides sous la zone de saisie : elles envoient une demande pré-remplie à l'agent, sur le cours
+ * sélectionné. « Examen » (message null) n'est pas un outil de l'agent : il ouvre la modale d'examen existante.
+ */
 export interface QuickAction {
   label: string;
-  message: string;
-  icon: 'summary' | 'quiz' | 'cards' | 'progress';
+  message: string | null;
+  icon: 'summary' | 'quiz' | 'cards' | 'exam';
 }
 
 export const QUICK_ACTIONS: readonly QuickAction[] = [
-  { label: 'Résumer le cours', message: 'Résume le cours.', icon: 'summary' },
-  { label: 'Générer un quiz', message: 'Fais-moi un quiz de 5 questions.', icon: 'quiz' },
   { label: 'Flashcards', message: 'Prépare-moi des flashcards pour réviser.', icon: 'cards' },
-  { label: 'Mes progrès', message: 'Montre-moi mes progrès.', icon: 'progress' },
+  { label: 'Résumé', message: 'Résume le cours.', icon: 'summary' },
+  { label: 'Examen', message: null, icon: 'exam' },
+  { label: 'Quiz', message: 'Fais-moi un quiz de 5 questions.', icon: 'quiz' },
 ];
 
 // ---------------------------------------------------------------------------

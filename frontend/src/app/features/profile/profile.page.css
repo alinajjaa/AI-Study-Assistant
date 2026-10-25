@@ -4,19 +4,6 @@
   gap: var(--space-4);
 }
 
-.page-header {
-  margin-bottom: var(--space-2);
-}
-
-.page-header h1 {
-  font-size: var(--text-2xl);
-}
-
-.lede {
-  margin: var(--space-1) 0 0;
-  color: var(--text-muted);
-}
-
 .card {
   display: flex;
   flex-direction: column;
@@ -54,14 +41,14 @@
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: var(--space-2);
   margin: 0;
 }
 
 .stat {
-  padding: var(--space-3);
-  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
   background: var(--surface-alt);
 }
 
@@ -90,12 +77,12 @@
 
 .weak {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 8rem auto;
+  grid-template-columns: minmax(0, 1fr) 9rem auto;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
 }
 
 .weak__info {
@@ -114,7 +101,7 @@
 .weak__bar {
   height: 6px;
   border-radius: var(--radius-pill);
-  background: var(--surface-alt);
+  background: var(--chart-track);
   overflow: hidden;
 }
 
@@ -134,10 +121,16 @@
 }
 
 .loading {
-  align-items: center;
-  min-height: 10rem;
-  justify-content: center;
+  padding: var(--space-6);
 }
+
+.gauges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-6);
+  padding: var(--space-2) 0;
+}
+
 
 @media (max-width: 800px) {
   .grid {

@@ -1,16 +1,46 @@
-<header class="app-header">
+<a class="skip-link" href="#main-content">Aller au contenu</a>
+
+<!--
+  Connecté, à partir de 1024 px : barre latérale (nouvelle conversation, recherche, récents, compte), repliable
+  en rail d'icônes par le bouton en haut ou Ctrl+B. Moins de 1024 px : barre du haut et barre en tiroir.
+-->
+<header
+  #header
+  class="app-header"
+  (mouseover)="showTip($event)"
+  (mouseout)="hideTip()"
+  (focusin)="showTip($event)"
+  (focusout)="hideTip()"
+  (keydown)="onRailKeydown($event)"
+>
   <div class="app-header__inner">
-    <a class="brand" routerLink="/">
-      <span class="brand__logo" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">
-          <path d="M4 19.5V5a2 2 0 0 1 2-2h14v15H6.5A2.5 2.5 0 0 0 4 20.5 2.5 2.5 0 0 0 6.5 23H20" />
-          <path d="M8 7h8M8 11h5" />
-        </svg>
-      </span>
-      <span class="brand__name">AI Study Assistant</span>
-    </a>
+    <div class="brand-row">
+      @if (auth.isAuthenticated()) {
+        <button
+          #sidebarToggle
+          type="button"
+          class="icon-btn sidebar-toggle"
+          aria-controls="main-menu"
+          aria-keyshortcuts="Control+B Meta+B"
+          [attr.aria-expanded]="!collapsed()"
+          [attr.aria-label]="collapsed() ? 'Déplier la barre latérale' : 'Replier la barre latérale'"
+          [attr.data-tip]="(collapsed() ? 'Déplier' : 'Replier') + ' la barre (' + shortcut + ')'"
+          data-tip-always
+          (click)="toggleCollapsed()"
+        >
+          <app-icon name="sidebar" [size]="18" />
+        </button>
+      }
+      <a class="brand" routerLink="/">
+        <span class="brand__logo" aria-hidden="true">
+          <app-icon name="book" [size]="19" />
+        </span>
+        <span class="brand__name">AI Study Assistant</span>
+      </a>
+    </div>
+
     @if (auth.isAuthenticated()) {
-      <!-- Sous 1280 px : menu compact, ouvert par ce bouton -->
+      <!-- Moins de 1024 px : la barre latérale s'ouvre en tiroir avec ce bouton -->
       <button
         type="button"
         class="btn btn--ghost btn--sm menu-toggle"
@@ -27,33 +57,30 @@
         </svg>
         Menu
       </button>
-      <div id="main-menu" class="menu" [class.menu--open]="menuOpen()">
-        <nav aria-label="Navigation principale">
-          @for (link of links; track link.path) {
-            <a
-              [routerLink]="link.path"
-              routerLinkActive="nav-link--active"
-              ariaCurrentWhenActive="page"
-              class="nav-link"
-              (click)="closeMenu()"
-            >
-              {{ link.label }}
-            </a>
-          }
-        </nav>
-        <div class="account">
-          @if (auth.user(); as user) {
-            <span class="account__email" [title]="user.email">{{ user.email }}</span>
-          }
-          <button type="button" class="btn btn--ghost btn--sm" (click)="logout()">Déconnexion</button>
-        </div>
+      @if (menuOpen()) {
+        <div class="menu-backdrop" aria-hidden="true" (click)="closeMenu()"></div>
+      }
+      <div id="main-menu" class="menu menu--drawer" [class.menu--open]="menuOpen()">
+        <app-shell-sidebar [collapsed]="collapsed()" />
       </div>
+    } @else {
+      <button type="button" class="icon-btn theme-toggle--icon" [attr.aria-label]="themeLabel()" [title]="themeLabel()" (click)="theme.toggle()">
+        <app-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'" [size]="18" />
+      </button>
     }
   </div>
 </header>
 
-<main class="app-main">
+@if (tip(); as current) {
+  <div class="shell-tip" aria-hidden="true" [style.top.px]="current.top" [style.left.px]="current.left">{{ current.text }}</div>
+}
+
+<main id="main-content" class="app-main" tabindex="-1">
+  @if (auth.isAuthenticated()) {
+    <app-nav-tabs class="app-tabs" />
+  }
   <router-outlet />
 </main>
 
 <app-toasts />
+<app-confirm-dialog />

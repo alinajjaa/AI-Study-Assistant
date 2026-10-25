@@ -1,15 +1,22 @@
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { formatElapsed } from '../../../core/utils/exam.utils';
+import { ConfirmService } from '../confirm-dialog/confirm.service';
+import { RouterLink } from '@angular/router';
+import { EmptyState } from '../empty-state/empty-state';
+import { Icon } from '../icon/icon';
 import { Loader } from '../loader/loader';
+import { Skeleton } from '../skeleton/skeleton';
 
 /** Liste « Mes cours », partagée par l'Assistant, les flashcards et les résumés. */
 @Component({
   selector: 'app-course-selector',
-  imports: [Loader],
+  imports: [Loader, EmptyState, Icon, RouterLink, Skeleton],
   templateUrl: './course-selector.html',
   styleUrl: './course-selector.css',
 })
 export class CourseSelector {
+  private readonly confirm = inject(ConfirmService);
+
   readonly courses = input.required<string[]>();
   /** Cours sélectionné, null = tous les cours. */
   readonly selected = input<string | null>(null);
@@ -29,10 +36,16 @@ export class CourseSelector {
   readonly examJobs = input<ReadonlyMap<string, number> | null>(null);
   /** Heure courante (ms), pour le chronomètre. */
   readonly now = input(0);
+  /**
+   * Aucun cours : « import » affiche un bouton qui ouvre le choix du PDF (Assistant, émet importRequested) ;
+   * « link » renvoie vers l'Assistant (pages Flashcards et Résumés).
+   */
+  readonly emptyAction = input<'import' | 'link'>('link');
 
   readonly selectedChange = output<string | null>();
   readonly deleteCourse = output<string>();
   readonly generateExam = output<string>();
+  readonly importRequested = output<void>();
 
   /** Temps écoulé « m:ss » si une génération est en cours pour ce cours, sinon null. */
   protected elapsed(course: string): string | null {
@@ -56,11 +69,17 @@ export class CourseSelector {
   }
 
   protected onDelete(course: string): void {
-    const ok = confirm(
-      `Supprimer le cours « ${course} » ?\nTous ses extraits indexés seront définitivement effacés.`,
-    );
-    if (ok) {
-      this.deleteCourse.emit(course);
-    }
+    this.confirm
+      .ask({
+        title: `Supprimer le cours « ${course} » ?`,
+        message: 'Tous ses extraits indexés seront définitivement effacés.',
+        confirmLabel: 'Supprimer le cours',
+        danger: true,
+      })
+      .subscribe((ok) => {
+        if (ok) {
+          this.deleteCourse.emit(course);
+        }
+      });
   }
 }

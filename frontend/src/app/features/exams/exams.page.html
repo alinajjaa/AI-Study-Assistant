@@ -3,14 +3,23 @@
   <p class="lede">Tous les examens générés, à retélécharger quand tu veux.</p>
 </header>
 
-@if (jobs.hasJobs()) {
-  <p class="alert alert--info" role="status">
-    Un examen est en cours de génération : il apparaîtra ici dès qu'il sera prêt.
-  </p>
+@if (running().length) {
+  <div class="running">
+    @for (job of running(); track job.course) {
+      <app-step-progress
+        [title]="'Examen « ' + job.course + ' » en préparation'"
+        [steps]="examSteps"
+        [startedAt]="job.startedAt"
+        [now]="jobs.now()"
+        [estimateS]="examEstimateS"
+        note="Il apparaîtra dans l'historique dès qu'il sera prêt."
+      />
+    }
+  </div>
 }
 
 @if (error(); as message) {
-  <p class="alert alert--error" role="alert">{{ message }}</p>
+  <app-error-state class="error" title="Historique indisponible" [message]="message" [busy]="loading()" (retry)="reload()" />
 }
 
 <section class="card" aria-labelledby="exams-title">
@@ -24,11 +33,16 @@
   </div>
 
   @if (exams().length === 0) {
-    @if (!loading()) {
-      <p class="hint empty">
-        Aucun examen pour l'instant. Génère-en un depuis l'<a routerLink="/companion">Assistant</a>
-        (bouton d'examen à côté de chaque cours).
-      </p>
+    @if (loading()) {
+      <app-skeleton variant="rows" [lines]="3" label="Chargement des examens…" />
+    } @else if (!error()) {
+      <app-empty-state
+        icon="exam"
+        title="Aucun examen pour l'instant"
+        text="Dans « Mes cours », clique sur « Examen » sous un cours (ou sur « Examen » sous la zone de saisie de l'Assistant) : un sujet noté sur 20, avec son corrigé, en PDF."
+      >
+        <a class="btn" routerLink="/courses">Générer un examen</a>
+      </app-empty-state>
     }
   } @else {
     <div class="table-wrap">

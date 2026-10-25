@@ -2,98 +2,42 @@
   display: block;
 }
 
-.page-header {
-  margin-bottom: var(--space-6);
-}
-
-.page-header h1 {
-  font-size: var(--text-2xl);
-}
-
-.lede {
-  margin: var(--space-1) 0 0;
-  color: var(--text-muted);
-}
-
 .banner {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
-  border: 1px solid var(--danger);
-  border-left-width: 4px;
-  border-radius: var(--radius);
-  background: var(--danger-soft);
-  color: var(--danger);
+  display: block;
 }
 
-.banner__text {
-  flex: 1;
-  margin: 0;
-  font-weight: 500;
-}
-
-.banner__close {
-  color: inherit;
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-  gap: var(--space-6);
-  align-items: start;
-}
-
-.sidebar {
-  position: sticky;
-  top: 5rem;
-  max-height: calc(100dvh - 6rem);
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.main {
+/* Colonne de lecture centrée : toute la largeur libérée, mais une largeur de ligne confortable */
+.page {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  width: 100%;
+  max-width: var(--reading-width);
   min-width: 0;
+  margin-inline: auto;
 }
 
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
+/* ------------------------------ Accueil ------------------------------ */
+.page--home {
+  justify-content: center;
+  gap: var(--space-6);
+  min-height: calc(100dvh - 12rem);
+  padding-bottom: 8vh;
 }
 
-.course-picker {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-.course-picker .label {
+.home__title {
   margin: 0;
-}
-
-.course-select {
-  width: auto;
-  min-width: 12rem;
-  max-width: 22rem;
+  font-family: var(--font-serif);
+  font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .loading-messages {
-  display: grid;
-  place-items: center;
-  min-height: 10rem;
+  padding: var(--space-6);
 }
 
 /* Espace sous le dernier échange : la dernière réponse reste entièrement visible au-dessus de la saisie */
@@ -102,9 +46,8 @@
 }
 
 /*
- * Zone de saisie fixée en bas : boutons rapides et champ dans un même bloc opaque.
- * Collée (sticky) et non superposée : elle garde sa place dans le flux, les messages défilent derrière
- * sans jamais être recouverts par des boutons transparents.
+ * Zone de saisie : collée en bas pendant une conversation, opaque, elle garde sa place dans le flux (les
+ * messages défilent derrière sans être recouverts). Sur l'accueil, elle est au centre.
  */
 .composer {
   position: sticky;
@@ -115,25 +58,81 @@
   gap: var(--space-2);
   margin-top: calc(-1 * var(--space-2));
   padding: var(--space-3) 0 var(--space-4);
-  border-top: 1px solid var(--border);
   background: var(--bg);
 }
 
+/* Pendant une conversation : la zone de saisie reste en bas de l'écran, même si les échanges sont courts */
+.page:not(.page--home) {
+  min-height: calc(100dvh - 8.5rem);
+}
+
+.page:not(.page--home) .composer {
+  margin-top: auto;
+}
+
+.page--home .composer {
+  position: static;
+  margin-top: 0;
+  padding: 0;
+}
+
+/* Outils dans le pied du champ : « + » (importer) et choix du cours */
+.tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.tool {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+
+.tool:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.course-hint {
+  margin: 0;
+  padding-left: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Actions rapides : sur l'accueil, ou quand la zone de saisie a le focus */
 .quick-actions {
   list-style: none;
-  display: flex;
+  display: none;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-2);
   margin: 0;
   padding: 0;
+}
+
+.quick-actions--shown,
+.composer:focus-within .quick-actions {
+  display: flex;
 }
 
 .quick {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--border-strong);
+  min-height: 2.25rem;
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--text);
@@ -141,11 +140,10 @@
   font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
   transition: border-color var(--duration) var(--ease), background-color var(--duration) var(--ease);
 }
 
-.quick svg {
+.quick app-icon {
   color: var(--accent);
 }
 
@@ -159,19 +157,36 @@
   opacity: 0.6;
 }
 
-@media (max-width: 800px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
+.exam-progress {
+  display: block;
+}
 
-  .sidebar {
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
+/* Surcouche affichée quand un PDF est glissé au-dessus de la page */
+.drop {
+  position: absolute;
+  inset: calc(-1 * var(--space-2));
+  z-index: 5;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--accent-soft) 92%, transparent);
+  pointer-events: none;
+  animation: drop-in var(--duration) var(--ease);
+}
 
-  .course-select {
-    min-width: 0;
-    max-width: 100%;
+.drop__inner {
+  position: sticky;
+  top: 40vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) 0;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@keyframes drop-in {
+  from {
+    opacity: 0;
   }
 }

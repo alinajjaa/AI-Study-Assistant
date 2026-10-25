@@ -6,7 +6,9 @@ import { LEVELS, Level, levelLabel } from '../../core/models/auth.models';
 import { Profile, WeakPoint, formatPercent } from '../../core/models/profile.models';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileApiService } from '../../core/services/profile-api.service';
-import { Loader } from '../../shared/components/loader/loader';
+import { ErrorState } from '../../shared/components/error-state/error-state';
+import { RingGauge } from '../../shared/components/ring-gauge/ring-gauge';
+import { Skeleton } from '../../shared/components/skeleton/skeleton';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { handleRadioKeydown } from '../../shared/utils/radio-group';
 
@@ -31,7 +33,7 @@ function writeDismissed(value: string): void {
 /** « Mon profil » : niveau, statistiques, points faibles et suggestion de niveau. */
 @Component({
   selector: 'app-profile-page',
-  imports: [Loader, RouterLink],
+  imports: [RouterLink, ErrorState, RingGauge, Skeleton],
   templateUrl: './profile.page.html',
   styleUrl: './profile.page.css',
 })
@@ -109,6 +111,11 @@ export class ProfilePage {
         },
         error: (err: unknown) => this.toasts.show('error', 'Niveau non modifié', toMessage(err)),
       });
+  }
+
+  /** « Réessayer » après une erreur de chargement. */
+  protected reload(): void {
+    this.load();
   }
 
   private load(): void {

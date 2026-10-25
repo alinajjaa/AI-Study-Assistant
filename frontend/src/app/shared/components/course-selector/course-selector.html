@@ -82,7 +82,28 @@
     }
   </ul>
 
-  @if (courses().length === 0 && !loading()) {
-    <p class="hint empty">Aucun cours indexé pour l'instant : ajoute un PDF pour commencer.</p>
+  @if (courses().length === 0) {
+    @if (loading()) {
+      <app-skeleton class="skeleton-list" variant="rows" [lines]="3" label="Chargement des cours…" />
+    } @else {
+      <app-empty-state
+        icon="upload"
+        title="Aucun cours"
+        text="Importe ton premier PDF de cours : le tuteur, les examens, les flashcards et les résumés partent de lui."
+        [compact]="true"
+      >
+        @if (emptyAction() === 'import') {
+          <button type="button" class="btn btn--sm" (click)="importRequested.emit()">
+            <app-icon name="upload" [size]="14" [stroke]="2" />
+            Importer un PDF
+          </button>
+        } @else {
+          <a class="btn btn--sm" routerLink="/companion">
+            <app-icon name="upload" [size]="14" [stroke]="2" />
+            Importer un PDF dans l'Assistant
+          </a>
+        }
+      </app-empty-state>
+    }
   }
 </section>

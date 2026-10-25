@@ -6,7 +6,7 @@
   border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--text);
-  box-shadow: 0 24px 64px rgb(0 0 0 / 25%);
+  box-shadow: var(--shadow-lg);
 }
 
 .dialog[open] {
@@ -14,7 +14,7 @@
 }
 
 .dialog::backdrop {
-  background: rgb(20 24 31 / 45%);
+  background: var(--overlay);
 }
 
 .panel {

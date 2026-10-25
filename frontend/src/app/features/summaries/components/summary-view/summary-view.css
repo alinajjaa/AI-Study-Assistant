@@ -20,10 +20,10 @@
 }
 
 .overview {
-  padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-sm);
   background: var(--accent-soft);
+  line-height: 1.7;
 }
 
 .overview__title {

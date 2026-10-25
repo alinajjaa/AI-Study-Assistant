@@ -1,50 +1,59 @@
-<section class="auth card" aria-labelledby="login-title">
-  <header class="auth__header">
-    <h1 id="login-title">Connexion</h1>
-    <p class="lede">Retrouve tes cours, tes conversations et tes révisions.</p>
-  </header>
+<div class="auth-page">
+  <div class="hero">
+    <app-auth-intro class="hero__intro" />
 
-  @if (redirected && !error()) {
-    <p class="alert alert--info" role="status">Connecte-toi pour continuer.</p>
-  }
+    <section class="auth" aria-labelledby="login-title">
+      <header class="auth__header">
+        <h2 id="login-title" class="auth__title">Connexion</h2>
+        <p class="lede">Retrouve tes cours, tes conversations et tes révisions.</p>
+      </header>
 
-  <form class="form" novalidate (submit)="submit($event)">
-    <div>
-      <label class="label" for="login-email">Email</label>
-      <input
-        id="login-email"
-        class="field"
-        type="email"
-        autocomplete="email"
-        required
-        [value]="email()"
-        [disabled]="loading()"
-        (input)="onInput('email', $event)"
-      />
-    </div>
+      @if (redirected && !error()) {
+        <p class="alert alert--info" role="status">Connecte-toi pour continuer.</p>
+      }
 
-    <div>
-      <label class="label" for="login-password">Mot de passe</label>
-      <input
-        id="login-password"
-        class="field"
-        type="password"
-        autocomplete="current-password"
-        required
-        [value]="password()"
-        [disabled]="loading()"
-        (input)="onInput('password', $event)"
-      />
-    </div>
+      <form class="form" novalidate (submit)="submit($event)">
+        <div>
+          <label class="label" for="login-email">Email</label>
+          <input
+            id="login-email"
+            class="field"
+            type="email"
+            autocomplete="email"
+            required
+            [value]="email()"
+            [disabled]="loading()"
+            (input)="onInput('email', $event)"
+          />
+        </div>
 
-    @if (error(); as message) {
-      <p class="alert alert--error" role="alert">{{ message }}</p>
-    }
+        <div>
+          <label class="label" for="login-password">Mot de passe</label>
+          <input
+            id="login-password"
+            class="field"
+            type="password"
+            autocomplete="current-password"
+            required
+            [value]="password()"
+            [disabled]="loading()"
+            (input)="onInput('password', $event)"
+          />
+        </div>
 
-    <button type="submit" class="btn btn--block" [disabled]="loading()">
-      {{ loading() ? 'Connexion…' : 'Se connecter' }}
-    </button>
-  </form>
+        @if (error(); as message) {
+          <p class="alert alert--error" role="alert">{{ message }}</p>
+        }
 
-  <p class="switch">Pas encore de compte ? <a routerLink="/register">Créer un compte</a></p>
-</section>
+        <button type="submit" class="btn btn--pill" [disabled]="loading()">
+          {{ loading() ? 'Connexion…' : 'Se connecter' }}
+          <app-icon name="arrow" [size]="18" class="btn__arrow" />
+        </button>
+      </form>
+
+      <p class="switch">Pas encore de compte ? <a routerLink="/register">Créer un compte <app-icon name="arrow" [size]="16" /></a></p>
+    </section>
+  </div>
+
+  <app-auth-features />
+</div>

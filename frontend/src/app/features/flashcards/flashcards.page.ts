@@ -16,7 +16,11 @@ import { FlashcardsApiService } from '../../core/services/flashcards-api.service
 import { TutorApiService } from '../../core/services/tutor-api.service';
 import { formatElapsed } from '../../core/utils/exam.utils';
 import { CourseSelector } from '../../shared/components/course-selector/course-selector';
+import { ConfirmService } from '../../shared/components/confirm-dialog/confirm.service';
+import { EmptyState } from '../../shared/components/empty-state/empty-state';
 import { Loader } from '../../shared/components/loader/loader';
+import { Skeleton } from '../../shared/components/skeleton/skeleton';
+import { StepProgress } from '../../shared/components/step-progress/step-progress';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { handleRadioKeydown } from '../../shared/utils/radio-group';
 import { FlashcardReview } from './components/flashcard-review/flashcard-review';
@@ -30,7 +34,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat('fr-FR', {
 
 @Component({
   selector: 'app-flashcards-page',
-  imports: [CourseSelector, FlashcardReview, Loader, RouterLink],
+  imports: [CourseSelector, FlashcardReview, Loader, RouterLink, EmptyState, Skeleton, StepProgress],
   templateUrl: './flashcards.page.html',
   styleUrl: './flashcards.page.css',
 })
@@ -38,6 +42,7 @@ export class FlashcardsPage {
   private readonly api = inject(TutorApiService);
   private readonly flashcards = inject(FlashcardsApiService);
   private readonly toasts = inject(ToastService);
+  private readonly confirm = inject(ConfirmService);
   private readonly route = inject(ActivatedRoute);
   protected readonly jobs = inject(FlashcardJobsService);
   /** Une seule alerte si l'enregistrement des révisions échoue pendant la session. */
@@ -67,6 +72,17 @@ export class FlashcardsPage {
     return startedAt === undefined ? '' : formatElapsed((this.jobs.now() - startedAt) / 1000);
   });
   protected readonly minutes = computed(() => FLASHCARD_MINUTES[this.count()]);
+  /** Début de la génération en cours pour le cours sélectionné (indicateur de progression). */
+  protected readonly jobStartedAt = computed(() => {
+    const course = this.selectedCourse();
+    return course === null ? null : (this.jobs.jobs().get(course) ?? null);
+  });
+  protected readonly generationSteps: readonly string[] = [
+    'Repérage des notions',
+    'Rédaction des cartes',
+    'Vérification',
+    'Enregistrement du paquet',
+  ];
 
   protected readonly setCount = (value: CardCount): void => this.count.set(value);
   protected readonly onRadioKeydown = handleRadioKeydown;
@@ -131,17 +147,25 @@ export class FlashcardsPage {
   }
 
   protected deleteDeck(deck: DeckSummary): void {
-    const ok = confirm(
-      `Supprimer le paquet du ${this.deckDate(deck)} (${deck.card_count} cartes) ?\n` +
-        'Tes révisions passées restent dans ton profil.',
-    );
-    if (!ok) {
-      return;
-    }
-    this.flashcards.deleteDeck(deck.id).subscribe({
-      next: () => this.decks.update((list) => list.filter((d) => d.id !== deck.id)),
-      error: (err: unknown) => this.toasts.show('error', 'Suppression impossible', toMessage(err)),
-    });
+    this.confirm
+      .ask({
+        title: `Supprimer le paquet du ${this.deckDate(deck)} (${deck.card_count} cartes) ?`,
+        message: 'Tes révisions passées restent dans ton profil.',
+        confirmLabel: 'Supprimer le paquet',
+        danger: true,
+      })
+      .subscribe((ok) => {
+        if (!ok) {
+          return;
+        }
+        this.flashcards.deleteDeck(deck.id).subscribe({
+          next: () => {
+            this.decks.update((list) => list.filter((d) => d.id !== deck.id));
+            this.toasts.show('success', 'Paquet supprimé');
+          },
+          error: (err: unknown) => this.toasts.show('error', 'Suppression impossible', toMessage(err)),
+        });
+      });
   }
 
   private loadCourses(): void {

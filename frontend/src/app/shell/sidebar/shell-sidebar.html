@@ -1,0 +1,51 @@
+<div class="top">
+  <button type="button" class="row new" data-tip="Nouvelle conversation" (click)="newConversation()">
+    <app-icon name="plus" [size]="18" />
+    <span class="row__label">Nouvelle conversation</span>
+  </button>
+
+  <div class="search">
+    <app-icon class="search__icon" name="search" [size]="16" />
+    <input
+      #searchInput
+      class="search__field"
+      type="search"
+      placeholder="Rechercher"
+      aria-label="Rechercher une conversation"
+      aria-controls="recents"
+      [value]="query()"
+      (input)="onQueryInput($event)"
+      (keydown.escape)="onQueryEscape($event)"
+    />
+    <!-- Rail : la loupe déplie la barre et place le focus dans la recherche -->
+    <button type="button" class="row search__rail" aria-label="Rechercher" data-tip="Rechercher" (click)="openSearch()">
+      <app-icon name="search" [size]="18" />
+    </button>
+  </div>
+</div>
+
+<!-- Seule zone qui défile -->
+<div id="recents" class="recents">
+  <div class="recents__inner">
+    @if (loadError(); as message) {
+      <p class="load-error" role="alert">
+        {{ message }}
+        <button type="button" class="link" (click)="load()">Réessayer</button>
+      </p>
+    }
+    <app-conversation-list
+      [conversations]="conversations.conversations()"
+      [activeId]="conversations.activeId()"
+      [loading]="conversations.loadingList()"
+      [query]="query()"
+      (selectConversation)="selectConversation($event)"
+      (newConversation)="newConversation()"
+      (rename)="renameConversation($event)"
+      (remove)="removeConversation($event)"
+    />
+  </div>
+</div>
+
+<div class="foot">
+  <app-account-menu [collapsed]="collapsed()" />
+</div>

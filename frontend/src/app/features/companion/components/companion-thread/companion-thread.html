@@ -25,16 +25,30 @@
             @switch (message.status) {
               @case ('pending') {
                 <div class="working">
-                  <app-loader variant="dots" [label]="working(message)" />
-                  @if (isLong(message)) {
+                  @if (longTask(message); as task) {
+                    <app-step-progress
+                      [title]="working(message)"
+                      [steps]="task.steps"
+                      [estimateS]="task.estimateS"
+                      [startedAt]="startedAt(message)"
+                      [now]="now()"
+                      [showElapsed]="false"
+                    />
                     <p class="hint working__hint">
                       Cela peut prendre 1 à 3 minutes. Tu peux changer de page : la réponse s'affichera ici.
                     </p>
+                  } @else {
+                    <app-loader variant="dots" [label]="working(message)" />
                   }
                 </div>
               }
               @case ('error') {
-                <p class="alert alert--error">Pas de réponse : {{ message.error }}</p>
+                <app-error-state
+                  title="Pas de réponse"
+                  [message]="message.error ?? 'L’assistant n’a pas pu répondre.'"
+                  retryLabel="Renvoyer la demande"
+                  (retry)="retry.emit({ question: message.question, course: message.course })"
+                />
               }
               @case ('done') {
                 @if (message.response; as response) {

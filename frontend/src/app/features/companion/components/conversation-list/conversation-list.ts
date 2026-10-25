@@ -1,35 +1,51 @@
-import { Component, ElementRef, Injector, afterNextRender, inject, input, output, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { Conversation } from '../../../../core/models/conversation.models';
+import { ConfirmService } from '../../../../shared/components/confirm-dialog/confirm.service';
 import { Loader } from '../../../../shared/components/loader/loader';
+import { RowMenu, RowMenuItem } from '../row-menu/row-menu';
+import { matches } from '../sidebar.utils';
 
-const DATE_FORMAT = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
+const MENU_ITEMS: RowMenuItem[] = [
+  { id: 'rename', label: 'Renommer' },
+  { id: 'delete', label: 'Supprimer', danger: true },
+];
 
-/** Barre latérale « Conversations » de l'Assistant : nouvelle, sélection, renommer, supprimer. */
+/** « Récents » de la barre latérale : conversations (la plus récente en tête), sélection, renommer, supprimer. */
 @Component({
   selector: 'app-conversation-list',
-  imports: [Loader],
+  imports: [Loader, RowMenu],
   templateUrl: './conversation-list.html',
   styleUrl: './conversation-list.css',
 })
 export class ConversationList {
   private readonly injector = inject(Injector);
+  private readonly confirm = inject(ConfirmService);
   private readonly renameInput = viewChild<ElementRef<HTMLInputElement>>('renameInput');
 
   readonly conversations = input.required<Conversation[]>();
   /** Conversation ouverte (null = nouvelle conversation). */
   readonly activeId = input<number | null>(null);
   readonly loading = input(false);
+  /** Recherche de la barre latérale (titre, sans accents ni casse). */
+  readonly query = input('');
 
   readonly selectConversation = output<number>();
   readonly newConversation = output<void>();
   readonly rename = output<{ id: number; title: string }>();
   readonly remove = output<number>();
 
+  protected readonly menuItems = MENU_ITEMS;
   /** Conversation en cours de renommage. */
   protected readonly editingId = signal<number | null>(null);
 
-  protected date(conversation: Conversation): string {
-    return DATE_FORMAT.format(new Date(conversation.updated_at));
+  protected readonly filtered = computed(() => this.conversations().filter((c) => matches(c.title, this.query())));
+
+  protected onMenu(action: string, conversation: Conversation): void {
+    if (action === 'rename') {
+      this.startRename(conversation);
+    } else if (action === 'delete') {
+      this.onDelete(conversation);
+    }
   }
 
   protected startRename(conversation: Conversation): void {
@@ -50,6 +66,8 @@ export class ConversationList {
       this.commitRename(conversation, (event.target as HTMLInputElement).value);
     } else if (event.key === 'Escape') {
       event.preventDefault();
+      // Annule le renommage sans fermer le tiroir qui contient la liste
+      event.stopPropagation();
       this.editingId.set(null);
     }
   }
@@ -66,11 +84,17 @@ export class ConversationList {
   }
 
   protected onDelete(conversation: Conversation): void {
-    const ok = confirm(
-      `Supprimer la conversation « ${conversation.title} » ?\nTous ses messages seront définitivement effacés.`,
-    );
-    if (ok) {
-      this.remove.emit(conversation.id);
-    }
+    this.confirm
+      .ask({
+        title: `Supprimer la conversation « ${conversation.title} » ?`,
+        message: 'Tous ses messages seront définitivement effacés.',
+        confirmLabel: 'Supprimer',
+        danger: true,
+      })
+      .subscribe((ok) => {
+        if (ok) {
+          this.remove.emit(conversation.id);
+        }
+      });
   }
 }

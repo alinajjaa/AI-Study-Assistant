@@ -8,16 +8,30 @@ import { SummaryJobsService, summaryJobKey } from '../../core/services/summary-j
 import { TutorApiService } from '../../core/services/tutor-api.service';
 import { formatElapsed } from '../../core/utils/exam.utils';
 import { CourseSelector } from '../../shared/components/course-selector/course-selector';
+import { ConfirmService } from '../../shared/components/confirm-dialog/confirm.service';
+import { EmptyState } from '../../shared/components/empty-state/empty-state';
 import { Loader } from '../../shared/components/loader/loader';
+import { Skeleton } from '../../shared/components/skeleton/skeleton';
+import { StepProgress } from '../../shared/components/step-progress/step-progress';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { SummaryView } from './components/summary-view/summary-view';
 
 const DATE_FORMAT = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 /** « Résumés » : résumé du cours entier (lit tout le cours) ou explication d'un thème. */
+const SUMMARY_TASKS: readonly { mode: SummaryMode; title: string; steps: readonly string[]; estimateS: number }[] = [
+  {
+    mode: 'course',
+    title: 'Résumé du cours entier en préparation',
+    steps: ['Lecture des parties', 'Résumé de chaque partie', 'Vue d’ensemble'],
+    estimateS: 45,
+  },
+  { mode: 'topic', title: 'Explication du thème en préparation', steps: ['Recherche dans le cours', 'Explication'], estimateS: 30 },
+];
+
 @Component({
   selector: 'app-summaries-page',
-  imports: [CourseSelector, Loader, RouterLink, SummaryView],
+  imports: [CourseSelector, Loader, RouterLink, SummaryView, EmptyState, Skeleton, StepProgress],
   templateUrl: './summaries.page.html',
   styleUrl: './summaries.page.css',
 })
@@ -25,6 +39,7 @@ export class SummariesPage {
   private readonly courseApi = inject(TutorApiService);
   private readonly api = inject(SummariesApiService);
   private readonly toasts = inject(ToastService);
+  private readonly confirm = inject(ConfirmService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly jobs = inject(SummaryJobsService);
@@ -54,6 +69,17 @@ export class SummariesPage {
     const course = this.selectedCourse();
     const startedAt = course === null ? undefined : this.courseJobs().get(course);
     return startedAt === undefined ? '' : formatElapsed((this.jobs.now() - startedAt) / 1000);
+  });
+  /** Résumés en cours pour le cours sélectionné : étapes habituelles et durée mesurée (indicateur de progression). */
+  protected readonly runningTasks = computed(() => {
+    const course = this.selectedCourse();
+    if (course === null) {
+      return [];
+    }
+    return SUMMARY_TASKS.flatMap((task) => {
+      const startedAt = this.jobs.jobs().get(summaryJobKey(course, task.mode));
+      return startedAt === undefined ? [] : [{ ...task, startedAt }];
+    });
   });
   protected readonly canExplain = computed(() => this.topic().trim().length >= 2 && !this.topicRunning());
 
@@ -132,15 +158,28 @@ export class SummariesPage {
   }
 
   protected remove(item: SummaryListItem): void {
-    if (!confirm(`Supprimer le résumé ${this.itemLabel(item)} du ${this.itemDate(item)} ?`)) {
-      return;
-    }
+    this.confirm
+      .ask({
+        title: `Supprimer le résumé ${this.itemLabel(item)} ?`,
+        message: `Généré le ${this.itemDate(item)}. Tu pourras le régénérer à tout moment.`,
+        confirmLabel: 'Supprimer le résumé',
+        danger: true,
+      })
+      .subscribe((ok) => {
+        if (ok) {
+          this.deleteSummary(item);
+        }
+      });
+  }
+
+  private deleteSummary(item: SummaryListItem): void {
     this.api.remove(item.id).subscribe({
       next: () => {
         this.summaries.update((list) => list.filter((s) => s.id !== item.id));
         if (this.current()?.id === item.id) {
           this.current.set(null);
         }
+        this.toasts.show('success', 'Résumé supprimé');
       },
       error: (err: unknown) => this.toasts.show('error', 'Suppression impossible', toMessage(err)),
     });

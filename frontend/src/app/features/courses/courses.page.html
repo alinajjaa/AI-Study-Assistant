@@ -1,0 +1,99 @@
+<div class="page" (dragover)="upload.onDragOver($event)" (dragleave)="upload.onDragLeave($event)" (drop)="upload.onDrop($event)">
+  <header class="page-header">
+    <h1>Mes cours</h1>
+    <p class="lede">Tes cours importés : discutes-en avec l'assistant, ou génère un examen, des flashcards ou un résumé.</p>
+  </header>
+
+  @if (error(); as message) {
+    <app-error-state class="banner" [message]="message" [retryable]="true" (retry)="loadCourses()" />
+  }
+
+  @if (loading() && courses().length === 0) {
+    <app-skeleton class="card skeleton" variant="rows" [lines]="3" label="Chargement des cours…" />
+  } @else if (courses().length === 0 && !error()) {
+    <app-empty-state
+      class="card"
+      icon="courses"
+      title="Aucun cours pour l'instant"
+      text="Importe ton premier PDF ci-dessous : l'assistant répondra uniquement à partir de son contenu."
+    />
+  }
+
+  <ul class="grid" aria-label="Cours">
+    @for (course of courses(); track course) {
+      <li class="card course">
+        <div class="course__head">
+          <span [class]="'course-avatar course-avatar--' + tint(course)" aria-hidden="true">{{ initial(course) }}</span>
+          <h2 class="course__name" [title]="course">{{ course }}</h2>
+          <button
+            type="button"
+            class="icon-btn icon-btn--danger"
+            [attr.aria-label]="'Supprimer le cours ' + course"
+            [title]="'Supprimer « ' + course + ' »'"
+            [disabled]="deleting() !== null"
+            (click)="onDelete(course)"
+          >
+            <app-icon name="trash" [size]="16" />
+          </button>
+        </div>
+
+        <p class="course__status" [class.course__status--busy]="job(course) !== null">
+          @if (job(course); as running) {
+            <span class="dot" aria-hidden="true"></span>
+            {{ running.label }} <span class="tabular">{{ running.time }}</span>
+          } @else if (deleting() === course) {
+            Suppression…
+          } @else {
+            Prêt pour l'assistant
+          }
+        </p>
+
+        <div class="course__actions">
+          <a
+            class="btn btn--sm discuss"
+            routerLink="/companion"
+            [queryParams]="{ course }"
+            [attr.aria-label]="'Discuter de ' + course"
+            (click)="discuss()"
+          >
+            <app-icon name="chat" [size]="15" />
+            Discuter
+          </a>
+          <button
+            type="button"
+            class="btn btn--ghost btn--sm"
+            [attr.aria-label]="'Générer un examen pour ' + course"
+            [title]="examRunning(course) ? 'Examen en cours de génération' : 'Générer un examen PDF'"
+            [disabled]="examRunning(course)"
+            (click)="openExam(course)"
+          >
+            Examen
+          </button>
+          <a class="btn btn--ghost btn--sm" routerLink="/flashcards" [queryParams]="{ course }" [attr.aria-label]="'Flashcards de ' + course">
+            Flashcards
+          </a>
+          <a class="btn btn--ghost btn--sm" routerLink="/summaries" [queryParams]="{ course }" [attr.aria-label]="'Résumé de ' + course">
+            Résumé
+          </a>
+        </div>
+      </li>
+    }
+
+    <li class="card import">
+      <h2 class="import__title">Importer un cours</h2>
+      <p class="import__text">Glisse un PDF n'importe où sur cette page, ou choisis-le ici.</p>
+      <app-upload-panel #upload (uploaded)="onUploaded($event)" />
+    </li>
+  </ul>
+
+  @if (upload.dragging()) {
+    <div class="drop" aria-hidden="true">
+      <div class="drop__inner">
+        <app-icon name="upload" [size]="28" />
+        Dépose ton PDF ici
+      </div>
+    </div>
+  }
+</div>
+
+<app-exam-dialog [course]="examCourse()" (generate)="onGenerateExam($event)" (closed)="onExamDialogClosed()" />

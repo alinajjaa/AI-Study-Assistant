@@ -1,0 +1,55 @@
+<button
+  #trigger
+  type="button"
+  class="trigger"
+  aria-haspopup="menu"
+  aria-controls="account-menu"
+  [attr.aria-expanded]="open()"
+  [attr.aria-label]="'Compte de ' + name() + ' : profil, thème, déconnexion'"
+  [attr.data-tip]="name()"
+  (click)="toggle()"
+>
+  <span class="avatar" aria-hidden="true">{{ initial() }}</span>
+  <span class="trigger__label">
+    <span class="trigger__name">{{ name() }}</span>
+  </span>
+  <app-icon class="trigger__chevron" name="chevron" [size]="16" />
+</button>
+
+@if (open()) {
+  <div
+    id="account-menu"
+    class="menu"
+    role="menu"
+    aria-label="Compte"
+    [class.menu--above]="position() === null"
+    [style.left.px]="position()?.left"
+    [style.bottom.px]="position()?.bottom"
+    [style.width.px]="position()?.width"
+    (keydown)="onMenuKeydown($event)"
+  >
+    <p class="menu__email" [title]="email()">{{ email() }}</p>
+    <a class="menu__item" role="menuitem" routerLink="/profile" (click)="goToProfile()">
+      <app-icon name="chart" [size]="16" />
+      Profil et statistiques
+    </a>
+    <button
+      type="button"
+      class="menu__item"
+      role="menuitem"
+      [attr.aria-label]="theme.theme() === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'"
+      (click)="toggleTheme()"
+    >
+      <app-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'" [size]="16" />
+      {{ themeLabel() }}
+    </button>
+    <button type="button" class="menu__item" role="menuitem" (click)="logout()">
+      <app-icon name="logout" [size]="16" />
+      Déconnexion
+    </button>
+    <p class="menu__note">
+      <app-icon name="shield" [size]="14" />
+      Emails et numéros sont masqués avant d'être envoyés au modèle.
+    </p>
+  </div>
+}

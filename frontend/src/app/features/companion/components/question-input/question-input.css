@@ -49,6 +49,7 @@
 
 .hint {
   flex: 1;
+  justify-content: flex-end;
   min-width: 0;
   margin: 0;
   display: flex;
@@ -68,5 +69,15 @@
 @media (max-width: 480px) {
   .shortcut {
     display: none;
+  }
+
+  /* Petit écran : bouton d'envoi en icône seule (libellé conservé pour les lecteurs d'écran) */
+  .send__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }

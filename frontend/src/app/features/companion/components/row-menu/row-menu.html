@@ -1,0 +1,35 @@
+<button
+  type="button"
+  class="icon-btn more"
+  aria-haspopup="menu"
+  [attr.aria-label]="label()"
+  [attr.aria-expanded]="open()"
+  (click)="toggle()"
+>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+    <circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" />
+  </svg>
+</button>
+@if (open()) {
+  <div
+    class="menu"
+    role="menu"
+    [attr.aria-label]="label()"
+    [style.top.px]="position().top"
+    [style.right.px]="position().right"
+    (keydown)="onMenuKeydown($event)"
+  >
+    @for (item of items(); track item.id) {
+      <button
+        type="button"
+        role="menuitem"
+        class="menu__item"
+        [class.menu__item--danger]="item.danger"
+        [disabled]="item.disabled"
+        (click)="choose(item)"
+      >
+        {{ item.label }}
+      </button>
+    }
+  </div>
+}

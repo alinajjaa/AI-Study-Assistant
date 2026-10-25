@@ -4,6 +4,9 @@ import { finalize } from 'rxjs';
 import { toMessage } from '../../core/interceptors/error.interceptor';
 import { LEVELS, Level, PASSWORD_MAX, PASSWORD_MIN } from '../../core/models/auth.models';
 import { AuthService } from '../../core/services/auth.service';
+import { Icon } from '../../shared/components/icon/icon';
+import { AuthFeatures } from './auth-features';
+import { AuthIntro } from './auth-intro';
 import { handleRadioKeydown } from '../../shared/utils/radio-group';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -24,7 +27,7 @@ export function validateRegistration(email: string, password: string): string | 
 
 @Component({
   selector: 'app-register-page',
-  imports: [RouterLink],
+  imports: [RouterLink, AuthIntro, AuthFeatures, Icon],
   templateUrl: './register.page.html',
   styleUrl: './auth.page.css',
 })

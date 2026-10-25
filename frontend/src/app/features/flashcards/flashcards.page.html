@@ -11,6 +11,7 @@
       [loading]="coursesLoading()"
       [allowAll]="false"
       [actions]="false"
+      emptyAction="link"
       [jobs]="jobs.jobs()"
       jobLabel="Flashcards en cours…"
       [now]="jobs.now()"
@@ -31,8 +32,15 @@
             }
           </div>
           @if (decks().length === 0) {
-            @if (!decksLoading()) {
-              <p class="hint">Aucun paquet pour ce cours : génère ton premier paquet ci-dessous.</p>
+            @if (decksLoading()) {
+              <app-skeleton variant="rows" [lines]="2" label="Chargement des paquets…" />
+            } @else {
+              <app-empty-state
+                icon="cards"
+                title="Aucun paquet pour ce cours"
+                text="Choisis le nombre de cartes ci-dessous et génère ton premier paquet."
+                [compact]="true"
+              />
             }
           } @else {
             <ul class="deck-list">
@@ -122,15 +130,31 @@
               <span class="hint">Tes paquets précédents sont conservés.</span>
             }
           </div>
+
+          @if (jobStartedAt(); as startedAt) {
+            <app-step-progress
+              title="Paquet de flashcards en préparation"
+              [steps]="generationSteps"
+              [startedAt]="startedAt"
+              [now]="jobs.now()"
+              [estimateS]="minutes() * 60"
+              note="Tu peux changer de page : le paquet apparaîtra dans « Mes paquets »."
+            />
+          }
         </div>
       }
     } @else {
       <div class="card empty">
         @if (coursesLoading()) {
-          <p class="hint">Chargement des cours…</p>
+          <app-skeleton [lines]="3" label="Chargement des cours…" />
         } @else {
-          <h2 class="card__title">Aucun cours</h2>
-          <p class="hint">Ajoute d'abord un cours en PDF depuis l'<a routerLink="/companion">Assistant</a>.</p>
+          <app-empty-state
+            icon="cards"
+            title="Aucun cours pour l'instant"
+            text="Les flashcards sont tirées de tes cours. Importe d'abord un PDF dans l'Assistant."
+          >
+            <a class="btn" routerLink="/companion">Importer un PDF</a>
+          </app-empty-state>
         }
       </div>
     }

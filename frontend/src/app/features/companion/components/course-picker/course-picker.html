@@ -1,0 +1,54 @@
+<button
+  type="button"
+  class="chip"
+  aria-haspopup="menu"
+  aria-controls="course-picker-menu"
+  [attr.aria-expanded]="open()"
+  [attr.aria-label]="'Cours interrogé : ' + label() + '. Changer de cours'"
+  [title]="label()"
+  [disabled]="loading() && courses().length === 0"
+  (click)="toggle()"
+>
+  <app-icon name="courses" [size]="15" />
+  <span class="chip__label">{{ label() }}</span>
+  <app-icon class="chip__chevron" name="chevron" [size]="14" />
+</button>
+
+@if (open()) {
+  <div id="course-picker-menu" class="menu" role="menu" aria-label="Choisir le cours" (keydown)="onMenuKeydown($event)">
+    <button
+      type="button"
+      class="menu__item"
+      role="menuitemradio"
+      [attr.aria-checked]="selected() === null"
+      (click)="choose(null)"
+    >
+      <span class="all" aria-hidden="true"><app-icon name="courses" [size]="15" /></span>
+      <span class="menu__name">Tous les cours</span>
+      @if (selected() === null) {
+        <app-icon class="check" name="check" [size]="16" />
+      }
+    </button>
+    @for (course of courses(); track course) {
+      <button
+        type="button"
+        class="menu__item"
+        role="menuitemradio"
+        [attr.aria-checked]="course === selected()"
+        [title]="course"
+        (click)="choose(course)"
+      >
+        <span class="course-avatar" [class]="'course-avatar course-avatar--' + tint(course)" aria-hidden="true">{{ initial(course) }}</span>
+        <span class="menu__name">{{ course }}</span>
+        @if (course === selected()) {
+          <app-icon class="check" name="check" [size]="16" />
+        }
+      </button>
+    }
+    <div class="menu__separator" role="separator"></div>
+    <button type="button" class="menu__item menu__item--import" role="menuitem" (click)="importPdf()">
+      <span class="all" aria-hidden="true"><app-icon name="plus" [size]="15" /></span>
+      <span class="menu__name">Importer un PDF</span>
+    </button>
+  </div>
+}

@@ -3,6 +3,9 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { toMessage } from '../../core/interceptors/error.interceptor';
 import { AuthService } from '../../core/services/auth.service';
+import { Icon } from '../../shared/components/icon/icon';
+import { AuthFeatures } from './auth-features';
+import { AuthIntro } from './auth-intro';
 
 /** Page à rouvrir après connexion : uniquement un chemin interne. */
 export function safeReturnUrl(value: string | null): string {
@@ -11,7 +14,7 @@ export function safeReturnUrl(value: string | null): string {
 
 @Component({
   selector: 'app-login-page',
-  imports: [RouterLink],
+  imports: [RouterLink, AuthIntro, AuthFeatures, Icon],
   templateUrl: './login.page.html',
   styleUrl: './auth.page.css',
 })

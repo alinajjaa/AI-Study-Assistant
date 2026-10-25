@@ -13,8 +13,12 @@
   ></textarea>
 
   <div class="footer">
+    <!-- Outils de la page (Assistant : import d'un PDF, choix du cours) -->
+    <ng-content select="[composerTools]" />
     <p id="question-hint" class="hint">
-      <span class="target">Cours : <strong>{{ course() ?? noCourseLabel() }}</strong></span>
+      @if (showTarget()) {
+        <span class="target">Cours : <strong>{{ course() ?? noCourseLabel() }}</strong></span>
+      }
       <span class="shortcut"><kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">Entrée</kbd> pour envoyer</span>
     </p>
     @if (length() > 0) {
@@ -24,7 +28,7 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
         <path d="M21 3 10 14" /><path d="m21 3-7 18-4-7-7-4z" />
       </svg>
-      {{ loading() ? 'En attente…' : 'Envoyer' }}
+      <span class="send__label">{{ loading() ? 'En attente…' : 'Envoyer' }}</span>
     </button>
   </div>
 </form>

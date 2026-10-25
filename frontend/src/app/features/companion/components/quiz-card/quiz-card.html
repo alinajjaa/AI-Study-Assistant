@@ -9,6 +9,10 @@
     </span>
   </header>
 
+  <div class="quiz__progress" aria-hidden="true">
+    <span class="quiz__progress-fill" [style.width.%]="total() ? (answered() / total()) * 100 : 0"></span>
+  </div>
+
   <ol class="questions">
     @for (question of quiz().questions; track $index; let i = $index) {
       @if (i < visible()) {
@@ -45,6 +49,14 @@
 
           @if (answers()[i]; as picked) {
             <div class="feedback" [class.feedback--ok]="picked === question.answer" role="status">
+              <span class="feedback__icon" aria-hidden="true">
+                @if (picked === question.answer) {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="m5 12.5 4.5 4.5L19 7" /></svg>
+                } @else {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" focusable="false"><path d="M7 7l10 10M17 7 7 17" /></svg>
+                }
+              </span>
+              <div class="feedback__body">
               <p class="feedback__verdict">
                 @if (picked === question.answer) {
                   Bonne réponse !
@@ -56,6 +68,7 @@
                 {{ question.explanation }}
                 <span class="page-ref" [title]="'Page ' + question.page + ' du cours'">p.{{ question.page }}</span>
               </p>
+              </div>
             </div>
           }
         </li>

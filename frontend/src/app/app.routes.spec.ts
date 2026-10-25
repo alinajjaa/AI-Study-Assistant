@@ -18,7 +18,7 @@ describe('routes', () => {
 
   it('toutes les pages de l’application sont protégées par authGuard', () => {
     const pages = routes.filter((r) => r.loadComponent && !['login', 'register'].includes(r.path ?? ''));
-    expect(pages.map((r) => r.path)).toEqual(['companion', 'flashcards', 'summaries', 'exams', 'profile']);
+    expect(pages.map((r) => r.path)).toEqual(['companion', 'flashcards', 'summaries', 'exams', 'courses', 'profile']);
     expect(pages.every((r) => r.canActivate?.includes(authGuard))).toBe(true);
   });
 });

@@ -1,4 +1,4 @@
-import { Component, ElementRef, computed, inject, output, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { toMessage } from '../../../../core/interceptors/error.interceptor';
 import { UploadResponse } from '../../../../core/models/tutor.models';
 import { TutorApiService } from '../../../../core/services/tutor-api.service';
@@ -24,6 +24,19 @@ export class UploadPanel {
   private readonly api = inject(TutorApiService);
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
 
+  /** Ouvre le sélecteur de fichier (bouton « Importer un PDF », lien de l'état vide « Mes cours »). */
+  openFilePicker(): void {
+    const input = this.fileInput().nativeElement;
+    input.scrollIntoView?.({ block: 'nearest' });
+    input.click();
+  }
+
+  /**
+   * Version compacte (zone de saisie de l'Assistant) : sans le bouton « Importer un PDF », ouvert par le « + »,
+   * le sélecteur de cours ou un glisser-déposer ; seuls le fichier choisi, la progression et les messages s'affichent.
+   */
+  readonly compact = input(false);
+
   /** Émis après une indexation réussie. */
   readonly uploaded = output<UploadResponse>();
 
@@ -34,7 +47,8 @@ export class UploadPanel {
     return file ? formatSize(file.size) : '';
   });
   protected readonly courseName = signal('');
-  protected readonly dragging = signal(false);
+  /** Un fichier est glissé au-dessus de la barre latérale (surcouche « Dépose ton PDF ici »). */
+  readonly dragging = signal(false);
   protected readonly uploading = signal(false);
   protected readonly success = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
@@ -45,14 +59,18 @@ export class UploadPanel {
     this.selectFile(input.files?.item(0) ?? null);
   }
 
-  protected onDragOver(event: DragEvent): void {
+  /** Glisser-déposer sur toute la barre latérale : la page relaie ces évènements. */
+  onDragOver(event: DragEvent): void {
+    if (!event.dataTransfer?.types.includes('Files')) {
+      return;
+    }
     event.preventDefault();
     if (!this.uploading()) {
       this.dragging.set(true);
     }
   }
 
-  protected onDragLeave(event: DragEvent): void {
+  onDragLeave(event: DragEvent): void {
     const zone = event.currentTarget as HTMLElement;
     // Ignore les sorties vers un élément enfant de la zone.
     if (!(event.relatedTarget instanceof Node) || !zone.contains(event.relatedTarget)) {
@@ -60,7 +78,10 @@ export class UploadPanel {
     }
   }
 
-  protected onDrop(event: DragEvent): void {
+  onDrop(event: DragEvent): void {
+    if (!event.dataTransfer?.types.includes('Files')) {
+      return;
+    }
     event.preventDefault();
     this.dragging.set(false);
     if (!this.uploading()) {

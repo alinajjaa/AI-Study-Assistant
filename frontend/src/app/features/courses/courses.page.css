@@ -1,0 +1,166 @@
+:host {
+  display: block;
+}
+
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.page-header {
+  margin-bottom: 0;
+}
+
+.banner,
+.skeleton {
+  display: block;
+}
+
+.skeleton {
+  padding: var(--space-5);
+}
+
+.grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+}
+
+.course {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.course__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.course__head .course-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  font-size: var(--text-sm);
+}
+
+.course__name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.course__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 1.25rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.course__status--busy {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: blink 1.4s ease-in-out infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}
+
+/* « Discuter » sur toute la largeur, puis Examen · Flashcards · Résumé sur une ligne */
+.course__actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.course__actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding-inline: var(--space-2);
+}
+
+.course__actions .discuss {
+  grid-column: 1 / -1;
+}
+
+/* Carte d'import : cadre en pointillés */
+.import {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-style: dashed;
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+
+.import__title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.import__text {
+  margin: 0 0 var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Surcouche affichée quand un PDF est glissé au-dessus de la page */
+.drop {
+  position: absolute;
+  inset: calc(-1 * var(--space-3));
+  z-index: 5;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--accent-soft) 92%, transparent);
+  pointer-events: none;
+}
+
+.drop__inner {
+  position: sticky;
+  top: 40vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) 0;
+  color: var(--accent);
+  font-weight: 600;
+}

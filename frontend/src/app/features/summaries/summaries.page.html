@@ -11,6 +11,7 @@
       [loading]="coursesLoading()"
       [allowAll]="false"
       [actions]="false"
+      emptyAction="link"
       [jobs]="courseJobs()"
       jobLabel="Résumé en cours…"
       [now]="jobs.now()"
@@ -53,6 +54,17 @@
         </form>
       </div>
 
+      @for (task of runningTasks(); track task.mode) {
+        <app-step-progress
+          [title]="task.title"
+          [steps]="task.steps"
+          [startedAt]="task.startedAt"
+          [now]="jobs.now()"
+          [estimateS]="task.estimateS"
+          note="Tu peux changer de page : le résumé apparaîtra dans « Mes résumés »."
+        />
+      }
+
       @if (current(); as summary) {
         <app-summary-view
           [summary]="summary"
@@ -69,8 +81,15 @@
           }
         </div>
         @if (summaries().length === 0) {
-          @if (!listLoading()) {
-            <p class="hint">Aucun résumé pour ce cours pour l'instant.</p>
+          @if (listLoading()) {
+            <app-skeleton variant="rows" [lines]="2" label="Chargement des résumés…" />
+          } @else {
+            <app-empty-state
+              icon="summary"
+              title="Aucun résumé pour ce cours"
+              text="Lance « Résumer tout le cours » ou explique un thème : tes résumés seront gardés ici."
+              [compact]="true"
+            />
           }
         } @else {
           <ul class="summary-list">
@@ -111,10 +130,15 @@
     } @else {
       <div class="card">
         @if (coursesLoading()) {
-          <p class="hint">Chargement des cours…</p>
+          <app-skeleton [lines]="3" label="Chargement des cours…" />
         } @else {
-          <h2 class="card__title">Aucun cours</h2>
-          <p class="hint">Ajoute d'abord un cours en PDF depuis l'<a routerLink="/companion">Assistant</a>.</p>
+          <app-empty-state
+            icon="summary"
+            title="Aucun cours pour l'instant"
+            text="Les résumés lisent tes cours section par section. Importe d'abord un PDF dans l'Assistant."
+          >
+            <a class="btn" routerLink="/companion">Importer un PDF</a>
+          </app-empty-state>
         }
       </div>
     }

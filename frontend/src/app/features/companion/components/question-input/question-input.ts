@@ -30,6 +30,8 @@ export class QuestionInput {
   readonly placeholder = input('Pose ta question sur le cours…');
   /** Indication quand aucun cours n'est choisi (l'assistant cherche alors dans tous les cours). */
   readonly noCourseLabel = input('tous les cours');
+  /** Indication « Cours : … » sous le champ (masquée quand la page affiche son propre sélecteur de cours). */
+  readonly showTarget = input(true);
 
   readonly ask = output<string>();
 

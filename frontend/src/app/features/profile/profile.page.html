@@ -6,7 +6,7 @@
 </header>
 
 @if (error(); as message) {
-  <p class="alert alert--error" role="alert">{{ message }}</p>
+  <app-error-state class="error" title="Profil indisponible" [message]="message" [busy]="loading()" (retry)="reload()" />
 }
 
 @if (profile(); as p) {
@@ -90,6 +90,24 @@
     </section>
   </div>
 
+  <section class="card rates" aria-labelledby="rates-title">
+    <h2 id="rates-title" class="card__title">Taux de réussite</h2>
+    <div class="gauges">
+      <app-ring-gauge
+        label="Cartes sues"
+        [value]="p.stats.known_rate"
+        [detail]="p.stats.cards_reviewed ? p.stats.cards_reviewed + ' cartes révisées' : 'Aucune révision pour l’instant'"
+      />
+      @if (p.quiz; as quiz) {
+        <app-ring-gauge
+          label="Réponses justes aux quiz"
+          [value]="quiz.correct_rate"
+          [detail]="quiz.answers ? quiz.answers + ' réponses' : 'Aucun quiz pour l’instant'"
+        />
+      }
+    </div>
+  </section>
+
   <section class="card" aria-labelledby="weak-title">
     <h2 id="weak-title" class="card__title">Points faibles</h2>
     @if (p.weak_points.length === 0) {
@@ -125,6 +143,6 @@
   </section>
 } @else if (loading()) {
   <div class="card loading">
-    <app-loader label="Chargement du profil…" />
+    <app-skeleton [lines]="6" label="Chargement du profil…" />
   </div>
 }
