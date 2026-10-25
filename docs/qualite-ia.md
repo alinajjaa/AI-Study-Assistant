@@ -144,6 +144,20 @@ sécurité (`S`), syntaxe moderne (`UP`), simplifications (`SIM`), compréhensio
 | `pip-audit -r requirements.txt` (158 paquets épinglés) | **aucune vulnérabilité connue** |
 | `npm audit` (toutes dépendances) et `npm audit --omit=dev` | **0 vulnérabilité** |
 
+**Mise à jour du 25/10.** Le job `audit` de la CI a détecté 55 vulnérabilités publiées après l'audit du 20/10,
+dans 6 paquets. Ils ont été mis à jour et épinglés (`mlflow-skinny` et `mlflow-tracing` suivent `mlflow`) ;
+212 tests verts, ruff et bandit sans constat, ingestion d'un PDF réel et export PDF des examens vérifiés ;
+`pip-audit -r requirements.txt` : 0 vulnérabilité.
+
+| Paquet | Avant (20/10) | Après (25/10) |
+|---|---|---|
+| `certifi` | 2026.7.22 | 2026.10.23 |
+| `filelock` | 4.1.0 | 4.2.4 |
+| `GitPython` | 3.2.0 | 3.2.1 |
+| `mlflow` (+ `mlflow-skinny`, `mlflow-tracing`) | 3.17.1 | 3.17.2 |
+| `pypdf` | 6.20.0 | 6.21.2 |
+| `pillow` | 12.3.0 | 13.0.0 |
+
 ---
 
 ## 3. Revue de sécurité
