@@ -118,6 +118,6 @@ def disable_tracing() -> None:
         import mlflow
 
         mlflow.langchain.autolog(disable=True)
-    except Exception:  # noqa: BLE001
-        pass
+    except Exception as e:  # noqa: BLE001 — désactivation au mieux, MLflow peut être absent
+        logger.debug("Désactivation du tracing MLflow impossible : %s", e)
     _enabled_uri = None

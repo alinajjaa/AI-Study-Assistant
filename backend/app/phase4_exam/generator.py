@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 from pydantic import BaseModel, ValidationError
 
+from app.core.passages import format_course
 from app.core.privacy import mask_pii
 from app.phase1_llm.llm import LLMError, chat
 from app.phase2_embeddings.embeddings import embed_passages
@@ -144,10 +145,6 @@ def passage_window(chunks: list[dict], index: int, size: int) -> list[dict]:
     """Le passage choisi, avec ses voisins immédiats si le type de question demande plus de contexte."""
     start = max(0, min(index - size // 2, len(chunks) - size))
     return chunks[start:start + size]
-
-
-def format_course(context: list[dict]) -> str:
-    return "\n\n".join(f"[page {c['page']}] {c['text']}" for c in context)
 
 
 def question_text(question: BaseModel) -> str:
@@ -402,7 +399,7 @@ def _generate_exam(course: str, fmt: ExamFormat, num_questions: int, difficulty:
     record_value("passages", len(chunks))
 
     plans = plan_exam(fmt, num_questions)
-    rng = random.Random()
+    rng = random.Random()  # noqa: S311 — mélange des passages et des choix, sans enjeu de sécurité
     asked: list[str] = []
     seen_vectors: list[list[float]] = []
     used: set[int] = set()

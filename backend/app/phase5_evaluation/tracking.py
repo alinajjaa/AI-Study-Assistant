@@ -213,6 +213,11 @@ def _mean(values: list[float]) -> float | None:
     return round(statistics.fmean(values), 4) if values else None
 
 
+def _values(metrics: list[dict], key: str) -> list[float]:
+    """Valeurs d'une métrique dans les runs qui l'ont enregistrée."""
+    return [m[key] for m in metrics if key in m]
+
+
 def summarize(max_runs: int = 2000) -> dict:
     """Moyennes de chaque expérience sur tous les runs enregistrés (application et benchmark)."""
     empty = {name: {"runs": 0, "duree_moyenne_s": None, "taux_reussite_moyen": None, "taux_rejet_moyens": {}}
@@ -226,15 +231,11 @@ def summarize(max_runs: int = 2000) -> dict:
             experiment = client.get_experiment_by_name(name)
             runs = client.search_runs([experiment.experiment_id], max_results=max_runs) if experiment else []
             metrics = [r.data.metrics for r in runs]
-
-            def values(key: str) -> list[float]:
-                return [m[key] for m in metrics if key in m]
-
-            rejects = {cause: _mean(values(f"taux_rejet_{cause}")) for cause in REJECT_CAUSES}
+            rejects = {cause: _mean(_values(metrics, f"taux_rejet_{cause}")) for cause in REJECT_CAUSES}
             result[name] = {
                 "runs": len(runs),
-                "duree_moyenne_s": _mean(values("duree_s")),
-                "taux_reussite_moyen": _mean(values(SUCCESS_METRIC[name])),
+                "duree_moyenne_s": _mean(_values(metrics, "duree_s")),
+                "taux_reussite_moyen": _mean(_values(metrics, SUCCESS_METRIC[name])),
                 "taux_rejet_moyens": {} if name in ("tutor", "agent") else rejects,
             }
         return {"mlflow": True, "portee": "globale", "experiences": result}

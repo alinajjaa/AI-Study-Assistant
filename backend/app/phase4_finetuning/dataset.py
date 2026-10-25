@@ -173,13 +173,13 @@ def make_example(qid: str, qtype: str, level: str, passage: dict, question: str,
 
 def passage_key(passage: dict) -> str:
     raw = f"{passage['course']}|{passage['page']}|{passage['text']}"
-    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]
+    return hashlib.sha1(raw.encode("utf-8"), usedforsecurity=False).hexdigest()[:12]  # identifiant, pas une signature
 
 
 def split(examples: list[dict], test_ratio: float = TEST_RATIO, seed: int = 42) -> tuple[list[dict], list[dict]]:
     """Découpe par question (jamais une même question dans train et test), au moins une question en test."""
     qids = sorted({e["qid"] for e in examples})
-    random.Random(seed).shuffle(qids)
+    random.Random(seed).shuffle(qids)  # noqa: S311 — découpage reproductible, sans enjeu de sécurité
     n_test = max(1, round(len(qids) * test_ratio)) if len(qids) > 1 else 0
     test_ids = set(qids[:n_test])
     train = [e for e in examples if e["qid"] not in test_ids]
@@ -263,7 +263,7 @@ class Progress:
 def tasks(passages: list[dict], seed: int) -> list[tuple[dict, str]]:
     """(passage, type de question) : un type différent par passage, puis un autre type à chaque tour."""
     order = passages[:]
-    random.Random(seed).shuffle(order)
+    random.Random(seed).shuffle(order)  # noqa: S311 — ordre reproductible, sans enjeu de sécurité
     types = list(QUESTION_TYPES)
     return [(p, types[(i + turn) % len(types)]) for turn in range(len(types)) for i, p in enumerate(order)]
 

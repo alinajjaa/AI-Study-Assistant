@@ -1,7 +1,29 @@
+import re
+
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
 from app.phase8_personal.models import Course
+
+COURSE_NAME_MAX = 100
+# Barres obliques : le nom sert de paramètre d'URL (/api/courses/{course}), un « / » rendrait le cours
+# impossible à interroger ou à supprimer. Caractères de contrôle : invisibles et dangereux dans les en-têtes.
+FORBIDDEN_IN_NAME = re.compile(r"[/\\\x00-\x1f\x7f]")
+
+
+def clean_course_name(name: str) -> str:
+    """Nom de cours importé, espaces normalisés ; 400 s'il est vide, trop long ou contient / \\ ou un caractère
+    de contrôle."""
+    if FORBIDDEN_IN_NAME.search(name):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            "Le nom du cours ne doit contenir ni « / », ni « \\ », ni caractère de contrôle.")
+    name = " ".join(name.split())
+    if not name:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Le nom du cours est vide")
+    if len(name) > COURSE_NAME_MAX:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            f"Le nom du cours est trop long ({COURSE_NAME_MAX} caractères au maximum).")
+    return name
 
 
 def course_not_found(name: str) -> HTTPException:

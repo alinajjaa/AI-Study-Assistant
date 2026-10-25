@@ -3,8 +3,9 @@ import logging
 import time
 import math
 import numpy as np
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 from app.phase4_exam.schemas import BoolAnswers
+from app.core.passages import format_course
 from app.core.privacy import mask_pii
 from app.phase1_llm.llm import LLMError, chat
 from app.phase2_embeddings.embeddings import embed_passages, embed_query
@@ -28,10 +29,6 @@ VERIFY_SYSTEM_PROMPT = (
     "Tu es un enseignant rigoureux qui vérifie des fiches de révision à partir du cours fourni. "
     "Tu réponds UNIQUEMENT avec un objet JSON valide."
 )
-
-
-def format_course(context: list[dict]) -> str:
-    return "\n\n".join(f"[page {c['page']}] {c['text']}" for c in context)
 
 
 def first_items(raw: str) -> list[dict]:

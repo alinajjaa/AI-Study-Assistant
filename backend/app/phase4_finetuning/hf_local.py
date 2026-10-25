@@ -49,12 +49,14 @@ def load():
     logger.info("hf-local : chargement de %s + %s (%s)", config.HF_BASE_MODEL, config.HF_ADAPTER,
                 "4 bits, GPU" if cuda else "CPU")
     try:
-        tokenizer = AutoTokenizer.from_pretrained(config.HF_BASE_MODEL, token=config.HF_TOKEN)
+        tokenizer = AutoTokenizer.from_pretrained(config.HF_BASE_MODEL, revision=config.HF_BASE_REVISION,
+                                                  token=config.HF_TOKEN)
         base = AutoModelForCausalLM.from_pretrained(
             config.HF_BASE_MODEL, quantization_config=quantization, device_map="auto" if cuda else None,
-            dtype=torch.float16 if cuda else torch.float32, token=config.HF_TOKEN,
+            dtype=torch.float16 if cuda else torch.float32, revision=config.HF_BASE_REVISION, token=config.HF_TOKEN,
         )
-        model = PeftModel.from_pretrained(base, config.HF_ADAPTER, token=config.HF_TOKEN)
+        model = PeftModel.from_pretrained(base, config.HF_ADAPTER, revision=config.HF_ADAPTER_REVISION,
+                                          token=config.HF_TOKEN)
     except Exception as e:  # noqa: BLE001 — réseau, dépôt introuvable, mémoire insuffisante…
         raise LLMError(f"Chargement du modèle affiné impossible : {type(e).__name__}.") from e
     model.eval()

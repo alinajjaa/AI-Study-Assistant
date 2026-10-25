@@ -1,0 +1,5 @@
+# Outils de qualité (local et CI), en plus de requirements.txt : pip install -r requirements-dev.txt
+pytest-cov==7.1.0
+ruff==0.17.1
+bandit==1.9.4
+pip-audit==2.10.1

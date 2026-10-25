@@ -1,0 +1,11 @@
+# Analyse de sécurité du backend (local et CI) : bandit -c bandit.yaml -r app scripts
+# Seuls les faux positifs vérifiés à la main sont ignorés (voir docs/qualite-ia.md, section 2).
+exclude_dirs:
+  - tests
+  - .venv
+skips:
+  # random.Random sert à mélanger les passages, les choix d'un QCM et le découpage train/test (graine fixe) :
+  # aucun usage cryptographique.
+  - B311
+  # xml.sax.saxutils.escape échappe du texte pour le PDF (reportlab) : aucun XML n'est analysé.
+  - B406

@@ -46,7 +46,7 @@ class UserOut(BaseModel):
 
 class AuthResponse(BaseModel):
     access_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"  # noqa: S105 — type de jeton OAuth2, pas un secret
     user: UserOut
 
 

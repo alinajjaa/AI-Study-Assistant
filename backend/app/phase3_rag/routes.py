@@ -2,12 +2,13 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel, Field
 from sqlmodel import Session
+from app.core import config
 from app.core.db import get_session
 from app.phase2_embeddings.ingest import ingest_pdf
 from app.phase2_embeddings.vectorstore import delete_course
 from app.phase3_rag.rag import answer
 from app.phase5_evaluation.tracking import track_tutor
-from app.phase8_personal.courses import add_course, list_user_courses, require_course
+from app.phase8_personal.courses import add_course, clean_course_name, list_user_courses, require_course
 from app.phase8_personal.deps import get_current_user
 from app.phase8_personal.models import User
 from app.phase8_personal.profile import weak_points
@@ -28,13 +29,15 @@ def upload_course(file: UploadFile = File(...), course: str | None = Form(None),
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Seuls les fichiers PDF sont acceptés")
 
-    name = (course or Path(file.filename).stem).strip()
-    if not name:
-        raise HTTPException(400, "Le nom du cours est vide")
+    name = clean_course_name(course or Path(file.filename).stem)
+    limit = int(config.MAX_UPLOAD_MB * 1024 * 1024)
+    data = file.file.read(limit + 1)  # jamais plus que la limite en mémoire
+    if len(data) > limit:
+        raise HTTPException(413, f"Fichier trop volumineux : {config.MAX_UPLOAD_MB:g} Mo au maximum")
     try:
-        n = ingest_pdf(file.file.read(), name, user.id)
+        n = ingest_pdf(data, name, user.id)
     except ValueError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
 
     if n == 0:
         raise HTTPException(422, "Aucun texte extrait : le PDF est probablement scanné (images)")

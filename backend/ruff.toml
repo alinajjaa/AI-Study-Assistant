@@ -1,0 +1,24 @@
+# Analyse statique du backend (lancée en local et dans la CI : ruff check app scripts tests).
+# Règles fixées ici pour que le résultat ne dépende pas de la version de ruff installée.
+target-version = "py311"
+line-length = 120
+extend-exclude = ["*.ipynb"]  # notebook exécuté sur Google Colab, hors de l'application
+
+[lint]
+select = [
+    "E4", "E7", "E9",  # erreurs de syntaxe et d'imports
+    "F",               # pyflakes : noms indéfinis, imports inutilisés…
+    "B",               # bugbear : pièges fréquents
+    "S",               # sécurité (règles de bandit)
+    "UP",              # syntaxe Python moderne
+    "SIM",             # simplifications
+    "C4",              # compréhensions
+]
+ignore = [
+    "B008",  # Depends(...) / Query(...) en valeur par défaut : idiome de FastAPI
+    "B905",  # zip(strict=...) : les longueurs sont vérifiées avant les zip du projet
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106", "S107", "S108", "S603"]  # assert, secrets factices, sous-processus de test
+"scripts/*" = ["S603", "S607"]

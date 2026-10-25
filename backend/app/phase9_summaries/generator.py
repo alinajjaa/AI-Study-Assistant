@@ -8,6 +8,7 @@ import logging
 
 from pydantic import BaseModel, ValidationError
 
+from app.core.passages import format_course
 from app.core.privacy import mask_pii
 from app.phase1_llm.llm import chat
 from app.phase2_embeddings.embeddings import embed_query
@@ -35,10 +36,6 @@ COMMON_RULES = """- Rédige TOUT en français, même si le cours est en anglais 
 - Ignore les noms de personnes, les dates de cours, les logos et les informations administratives.
 - Chaque puce est une phrase complète qui se termine par la page d'où vient l'information, sous la forme [p.X],
   avec X parmi : {pages}."""
-
-
-def format_course(context: list[dict]) -> str:
-    return "\n\n".join(f"[page {c['page']}] {c['text']}" for c in context)
 
 
 def course_sections(chunks: list[dict]) -> list[list[dict]]:

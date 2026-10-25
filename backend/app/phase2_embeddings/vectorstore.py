@@ -6,6 +6,7 @@ from qdrant_client.models import (
     Filter, FieldCondition, MatchValue, FilterSelector, IsEmptyCondition, PayloadField,
 )
 from app.core.config import QDRANT_PATH, QDRANT_URL, COLLECTION
+from app.core.safety import neutralize_instructions
 from app.phase2_embeddings.embeddings import dimension
 
 # Serveur Qdrant (Docker) par défaut ; mode intégré (dossier local ou ":memory:") si QDRANT_PATH est défini
@@ -20,6 +21,11 @@ def _filter(course: str | None = None, user_id: int | None = None) -> Filter | N
     if user_id is not None:
         must.append(FieldCondition(key="user_id", match=MatchValue(value=user_id)))
     return Filter(must=must) if must else None
+
+
+def _readable(chunk: dict) -> dict:
+    """Passage prêt à entrer dans un prompt : les consignes cachées dans le PDF sont retirées (injection de prompt)."""
+    return {**chunk, "text": neutralize_instructions(chunk.get("text", ""))}
 
 
 def ensure_collection() -> None:
@@ -51,7 +57,7 @@ def search(vector: list[float], k: int, course: str | None = None, *, user_id: i
         query_filter=_filter(course or None, user_id),
         with_payload=True,
     )
-    return [{**p.payload, "score": p.score} for p in res.points]
+    return [_readable({**p.payload, "score": p.score}) for p in res.points]
 
 
 def list_courses(user_id: int | None = None) -> list[str]:
@@ -91,7 +97,7 @@ def get_course_chunks(course: str, user_id: int | None) -> list[dict]:
             with_payload=True,
             with_vectors=False,
         )
-        chunks.extend(p.payload for p in points)
+        chunks.extend(_readable(p.payload) for p in points)
         if offset is None:
             return sorted(chunks, key=lambda c: c["page"])
 

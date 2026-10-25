@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import Literal
 
 from sqlalchemy import JSON, Column, UniqueConstraint
@@ -10,7 +10,7 @@ LEVELS: tuple[Level, ...] = ("debutant", "intermediaire", "avance")
 
 def utcnow() -> datetime:
     """Date UTC avec fuseau (SQLModel la relit en UTC, même depuis SQLite)."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class User(SQLModel, table=True):

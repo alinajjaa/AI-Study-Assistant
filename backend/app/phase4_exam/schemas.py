@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -207,7 +207,7 @@ class OpenQuestion(BaseModel):
 
 
 Question = Annotated[
-    Union[MCQQuestion, TrueFalseQuestion, ShortAnswerQuestion, OpenQuestion],
+    MCQQuestion | TrueFalseQuestion | ShortAnswerQuestion | OpenQuestion,
     Field(discriminator="type"),
 ]
 

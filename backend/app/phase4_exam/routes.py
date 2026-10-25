@@ -29,9 +29,9 @@ def create_exam(course: str, body: ExamRequest, user: User = Depends(get_current
     except Exception as e:
         log_run_async("exam", *exam_run(stats, **run, error=e))
         if isinstance(e, LookupError):
-            raise HTTPException(404, str(e))
+            raise HTTPException(404, str(e)) from e
         if isinstance(e, ValueError):
-            raise HTTPException(422, str(e))
+            raise HTTPException(422, str(e)) from e
         raise  # Les erreurs du LLM (LLMError) sont transformées en 503 par le gestionnaire global de main.py
     log_run_async("exam", *exam_run(stats, **run, exam=exam))
 

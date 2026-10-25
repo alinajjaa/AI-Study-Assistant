@@ -10,7 +10,9 @@ LLM_API_KEY = os.getenv("LLM_API_KEY", "ollama")
 # Un même fichier .env sert ainsi à Ollama en local et à Groq dans Docker (où seul LLM_BASE_URL change).
 if "api.groq.com" in LLM_BASE_URL and os.getenv("GROQ_API_KEY"):
     LLM_API_KEY = os.getenv("GROQ_API_KEY")
-LLM_MODEL = os.getenv("LLM_MODEL", "qwen2.5:3b")
+# Modèle par défaut si LLM_MODEL n'est pas défini : le même que le profil Ollama de .env.example (testé)
+DEFAULT_LLM_MODEL = "qwen2.5:7b"
+LLM_MODEL = os.getenv("LLM_MODEL", DEFAULT_LLM_MODEL)
 LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "120"))  # secondes avant d'abandonner un appel au LLM
 # Sorties JSON : "json_schema" (par défaut, repli automatique sur json_object si le modèle le refuse)
 # ou "json_object" (forcé, pour un modèle sans sorties structurées) ; le code valide tout avec Pydantic.
@@ -24,6 +26,9 @@ LLM_RATE_LIMIT_MAX_WAIT = float(os.getenv("LLM_RATE_LIMIT_MAX_WAIT", "60"))
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai").strip().lower()
 HF_BASE_MODEL = os.getenv("HF_BASE_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
 HF_ADAPTER = os.getenv("HF_ADAPTER", "")  # dépôt du Hub (<utilisateur>/study-tutor-qwen2.5-1.5b-lora) ou dossier local
+# Révisions téléchargées depuis le Hub : « main » par défaut ; un hash de commit garantit les poids exacts
+HF_BASE_REVISION = os.getenv("HF_BASE_REVISION", "main")
+HF_ADAPTER_REVISION = os.getenv("HF_ADAPTER_REVISION", "main")
 EMBED_MODEL = os.getenv("EMBED_MODEL", "intfloat/multilingual-e5-small")
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 # Qdrant intégré (sans serveur, ex. Hugging Face Spaces) : dossier local ou ":memory:". Prioritaire sur QDRANT_URL.
@@ -34,6 +39,9 @@ COLLECTION = "courses"
 # ou quand FastAPI sert le frontend (même origine).
 CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:4200").split(",") if o.strip()]
 
+# PDF importés : au-delà, réponse 413 (même limite que le frontend et que nginx)
+MAX_UPLOAD_MB = float(os.getenv("MAX_UPLOAD_MB", "50"))
+
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 150
 TOP_K = 3
@@ -41,6 +49,9 @@ TOP_K = 3
 # Comptes étudiants (phase 8)
 JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_EXPIRE_HOURS = float(os.getenv("JWT_EXPIRE_HOURS", "24"))
+# Connexion : après LOGIN_MAX_FAILURES échecs pour un même email en LOGIN_WINDOW_MINUTES, réponse 429
+LOGIN_MAX_FAILURES = int(os.getenv("LOGIN_MAX_FAILURES", "5"))
+LOGIN_WINDOW_MINUTES = float(os.getenv("LOGIN_WINDOW_MINUTES", "15"))
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./study.db")
 STORAGE_DIR = os.getenv("STORAGE_DIR", "./storage")  # PDF des examens générés
 

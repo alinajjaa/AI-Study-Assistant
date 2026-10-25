@@ -1,0 +1,14 @@
+# Variante de qwen2.5:7b chargée entièrement sur le GPU (RTX 4050, 6 Go de VRAM).
+# Création : ollama create qwen2.5-7b-gpu -f Modelfile   puis, dans backend/.env : LLM_MODEL=qwen2.5-7b-gpu
+#
+# num_gpu 99   : toutes les couches sur le GPU (sans ce réglage, Ollama en laisse une partie sur le CPU)
+# num_ctx 4096 : contexte de 4 096 jetons ; le plus long prompt du projet (résumé d'une section) en fait
+#                environ 1 250, et un contexte plus court réduit la mémoire du cache KV
+#
+# Réglages du serveur Ollama (variables d'environnement, pas du Modelfile) :
+#   OLLAMA_FLASH_ATTENTION=1   attention optimisée, nécessaire pour quantifier le cache KV
+#   OLLAMA_KV_CACHE_TYPE=q8_0  cache KV en 8 bits : environ deux fois moins de VRAM qu'en f16
+#   OLLAMA_KEEP_ALIVE=-1       le modèle reste chargé (pas de rechargement après 5 minutes d'inactivité)
+FROM qwen2.5:7b
+PARAMETER num_gpu 99
+PARAMETER num_ctx 4096

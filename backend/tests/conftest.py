@@ -25,9 +25,12 @@ from tests.helpers import DIM, FakeLLM, fake_vector  # noqa: E402
 def fresh_db():
     import shutil
 
+    from app.phase8_personal.auth_routes import login_throttle
+
     SQLModel.metadata.drop_all(engine)
     init_db()
     shutil.rmtree(os.environ["STORAGE_DIR"], ignore_errors=True)
+    login_throttle.reset()  # échecs de connexion en mémoire : aucun test n'hérite de ceux d'un autre
     yield
 
 

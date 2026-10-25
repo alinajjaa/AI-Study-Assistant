@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 import jwt
 
@@ -64,7 +64,7 @@ def test_me_sans_jeton(client):
 def test_me_jeton_invalide_ou_expire(client):
     assert client.get("/api/me", headers={"Authorization": "Bearer abc.def.ghi"}).status_code == 401
     headers = register(client)
-    expired = jwt.encode({"sub": "1", "exp": datetime.now(timezone.utc) - timedelta(minutes=1)},
+    expired = jwt.encode({"sub": "1", "exp": datetime.now(UTC) - timedelta(minutes=1)},
                          config.JWT_SECRET, algorithm="HS256")
     res = client.get("/api/me", headers={"Authorization": f"Bearer {expired}"})
     assert res.status_code == 401

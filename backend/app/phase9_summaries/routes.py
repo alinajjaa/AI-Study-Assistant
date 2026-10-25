@@ -61,9 +61,9 @@ def create_summary(course: str, body: SummaryRequest, user: User = Depends(get_c
     except Exception as e:
         log_run_async("summary", *summary_run(stats, **run, error=e))
         if isinstance(e, LookupError):
-            raise HTTPException(404, str(e))
+            raise HTTPException(404, str(e)) from e
         if isinstance(e, ValueError):
-            raise HTTPException(422, str(e))
+            raise HTTPException(422, str(e)) from e
         raise
     log_run_async("summary", *summary_run(stats, **run, content=content))
 

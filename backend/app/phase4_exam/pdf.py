@@ -12,7 +12,7 @@ from reportlab.platypus import (
 )
 
 from app.phase4_exam.schemas import (
-    Exam, ExamSection, MCQQuestion, OpenQuestion, ShortAnswerQuestion, TrueFalseQuestion,
+    Exam, ExamSection, MCQQuestion, ShortAnswerQuestion, TrueFalseQuestion,
 )
 
 LETTERS = "ABCD"

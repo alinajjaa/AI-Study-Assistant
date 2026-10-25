@@ -29,9 +29,9 @@ def create_flashcards(course: str, body: FlashcardRequest, user: User = Depends(
     except Exception as e:
         log_run_async("flashcards", *flashcards_run(stats, course=course, count=body.count, error=e))
         if isinstance(e, LookupError):
-            raise HTTPException(status_code=404, detail=str(e))
+            raise HTTPException(status_code=404, detail=str(e)) from e
         if isinstance(e, ValueError):
-            raise HTTPException(status_code=422, detail=str(e))
+            raise HTTPException(status_code=422, detail=str(e)) from e
         raise
     log_run_async("flashcards", *flashcards_run(stats, course=course, count=body.count, deck=generated))
     return deck_out(save_deck(session, user.id, generated))
